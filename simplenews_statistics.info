@@ -1,12 +1,8 @@
-;hacked by Fedik http://drupal.org/user/1324974
 name = "Simplenews Statistics"
 description = "Gathers newsletter statistics"
-package = Mail
-
+files[] = tests/simplenews_statistics.test
 dependencies[] = simplenews
-;dependencies[] = views
-
-
-version = "7.x-1.x-dev"
-core = "7.x"
-project = "simplenews_statistics"
+dependencies[] = views
+configure = admin/config/simplenews/statistics
+package = Mail
+core = 7.x

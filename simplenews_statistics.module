@@ -2,39 +2,29 @@
 
 /**
  * @file
- * Gathers newsletter statistics.
+ * Main simplenews statistics file.
  */
- 
+
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function simplenews_statistics_menu() {
-//   $items['admin/content/simplenews/statistics'] = array(
-//     'title' => 'Statistics',
-//     'description' => 'View the openings/rate and clicks/CTR for your newsletters',
-//     'type' => MENU_LOCAL_ACTION,
-//     'page callback' => 'drupal_get_form',
-//     'page arguments' => array('simplenews_statistics_admin_form'),
-//     'access arguments' => array('administer newsletters'),
-//   );
-  $items['admin/content/simplenews/statistics/%node'] = array(
-    'title' => 'Statistics Details',
+  $items['admin/content/simplenews/statistics'] = array(
+    'title' => 'Statistics',
+    'description' => 'View the openings/rate and clicks/CTR for your newsletters',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('simplenews_statistics_admin_opens', 4),
-    'access arguments' => array('administer newsletters'),
+    'page arguments' => array('simplenews_statistics_admin_form'),
+    'access callback' => 'simplenews_statistics_access',
   );
-  $items['admin/content/simplenews/statistics/%node/opens'] = array(
-    'title' => 'Newsletter opens',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -10,
-  );
-  $items['admin/content/simplenews/statistics/%node/clicks'] = array(
-    'title' => 'Newsletter clicks',
-    'type' => MENU_LOCAL_TASK,
+  $items['admin/config/simplenews/statistics'] = array(
+    'title' => 'Simplenews Statistics Settings',
+    'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('simplenews_statistics_admin_clicks', 4),
-    'access arguments' => array('administer newsletters'),
+    'page arguments' => array('simplenews_statistics_admin_settings_form'),
+    'access arguments' => array('administer newsletter statistics'),
+    'file' => 'simplenews_statistics.admin.inc',
+    'weight' => -7.9,
   );
   $items['simplenews/statistics/view'] = array(
     'type' => MENU_CALLBACK,
@@ -50,139 +40,135 @@ function simplenews_statistics_menu() {
 }
 
 /**
- * Implementation of hook_help().
+ * Implements hook_permission().
  */
-function simplenews_statistics_help($path) {
+function simplenews_statistics_permission() {
+  $perms = array(
+    'administer newsletter statistics' => array(
+      'title' => t('administer newsletter statistics'),
+      'description' => t('Allows administrators to administer newsletter statistics. Give to only trusted roles.'),
+    ),
+    'view newsletters statistics' => array(
+      'title' => t('View newsletter statistics'),
+      'description' => t('Allow a roles to access the statistics.'),
+    ),
+  );
+  return $perms;
+}
+
+/**
+ * Access for newsletter statistics.
+ */
+function simplenews_statistics_access($node = NULL) {
+  // If the user has the global permission, allow access.
+  if (user_access('view newsletters statistics')) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_help().
+ */
+function simplenews_statistics_help($path, $arg) {
   switch ($path) {
     case 'admin/help#simplenews_statistics':
-      $help = '<p>'. t('Simplenews Statistics gathers the open rate and CTR of a send newsletter.') ."<br />\n";
-      $help .= t("Open Rate is the number of people who open a newsletter divided by the amount of subscriptions.") ."<br />\n";
-      $help .= t("CTR (click-through rate) is the number of people who clicked a link in a newsletter divided by the amount of subscriptions") ."</p>\n";
+      $help = '<p>' . t('Simplenews Statistics gathers the open rate and CTR of a send newsletter.') . "<br />\n";
+      $help .= t("Open Rate is the number of people who open a newsletter divided by the amount of subscriptions.") . "<br />\n";
+      $help .= t("CTR (click-through rate) is the number of people who clicked a link in a newsletter divided by the amount of subscriptions") . "</p>\n";
       return $help;
     case 'admin/content/simplenews/statistics':
-      $help = '<p>'. t('Shows the open rate and CTR for your newsletters.') ."<p>\n";
+      $help = '<p>' . t('Shows the open rate and CTR for your newsletters.') . "<p>\n";
       return $help;
     case 'admin/content/simplenews/statistics/%':
-      $help = '<p>'. t('Shows who and how many times the newsletter has been openend.') ."<p>\n";
+      $help = '<p>' . t('Shows who and how many times the newsletter has been openend.') . "<p>\n";
       return $help;
     case 'admin/content/simplenews/statistics/%/clicks':
-      $help = '<p>'. t('Listing of all clicks for the newsletter.') ."<p>\n";
+      $help = '<p>' . t('Listing of all clicks for the newsletter.') . "<p>\n";
       return $help;
   }
 }
 
 /**
- * simplenews_statistics_view.
- *
- * Gathers the opens
- * @todo: optimise me!
+ * Gathers the opens.
  */
 function simplenews_statistics_view() {
-	
   $stat = _simplenews_statistics_decode($_GET);
- // krumo($stat);
-  if ($stat['mail'] && $stat['nid']) {
-    // Update total
-    _simplenews_statistics_open_add($stat['nid']);
-    
-    $opens = db_select('simplenews_statistics_opens','s')
-	    ->condition('nid',$stat['nid'],'=')
-    	->condition('email',$stat['mail'],'=')
-	    ->fields('s',array('opens'))
-	    ->execute()
-	    ->fetchField();
-    
-    if(!$opens){
-    	$id = db_insert('simplenews_statistics_opens')
-    		->fields(array('nid'=>$stat['nid'],'email'=>$stat['mail'], 'opens'=>1,'timestamp'=>time()))
-    		->execute();
-    }else{
-    	$id = db_update('simplenews_statistics_opens')
-    		->fields(array('opens'=>$opens+1,'timestamp'=>time()))
-    		->condition('nid',$stat['nid'],'=')
-    		->condition('email',$stat['mail'],'=')
-    		->execute();
-    }
-    
+
+  if ($stat['mail'] && $stat['nid'] && variable_get('simplenews_statistics', 1)) {
+    // Process the open for statistics.
+    _simplenews_statistics_open_add($stat);
   }
 }
 
 /**
- * simplenews_statistics_click.
- *
- * Gathers the clicks
- *  @todo: optimise me!
+ * Gathers the clicks.
  */
 function simplenews_statistics_click() {
   $stat = _simplenews_statistics_decode($_GET);
- // krumo($stat);
+
   if ($stat['mail'] && $stat['nid'] && $stat['url']) {
-    // Update total
-    _simplenews_statistics_click_add($stat['nid']);
-    db_insert('simplenews_statistics_clicks')
-	    ->fields(array(
-	    	'email'=>$stat['mail'],
-	    	'nid'=>$stat['nid'],
-	    	'url'=>urldecode($stat['url']),
-	    	'timestamp'=>time()
-	    ))->execute();
-  
+    // Process the click for statistics.
+    if (variable_get('simplenews_statistics', 1)) {
+      _simplenews_statistics_click_add($stat);
+    }
+    // Add Google Aanalytics tracking.
+    _simplenews_statistics_add_ga($stat['url'], $stat['nid']);
+    // Proceed to the actual link.
     drupal_goto(urldecode($stat['url']));
   }
-  
+
   drupal_goto();
 }
 
 /**
- * Implemetation of hook_mail_alter().
+ * Implements hook_mail_alter().
  *
- * Adds a hidden image to the body and counts the amount of emails send
- * 
- * @param $message
- *  Mail message array.
- *  
- *  @todo: optimise me!
+ * Adds a hidden image to the body and counts the amount of emails send.
  */
-function simplenews_statistics_mail_alter(&$message) { 
-	//krumo($message);exit;
-  //if ($message['id'] == 'simplenews_node' && $message['params']['context']['node']->simplenews['s_format']=='html') {
-	if ($message['module'] == 'simplenews' && $message['params']['context']['category']->format =='html') {
-      $nid   = $message['params']['context']['node']->nid;
-      $mail  = $message['params']['context']['account']->mail;
+function simplenews_statistics_mail_alter(&$message) {
     
-      // Need absolute urls
-       _simplenews_statistics_absolute($message['body']);
-      
-      // Parse body
-      _simplenews_statistics_parse_links($message['body'], $nid, $mail);
-      
-      // Add view image
-      _simplenews_statistics_image_tag($message['body'], $nid, $mail);
-      
-      //not count tests email
-      if ($message['key']=='test'){return ;}
-      
-      // Count
-      $sended = db_select('simplenews_statistics','s')
-      	->condition('nid',$nid,'=')
-      	->fields('s',array('send'))
-      	->execute()
-      	->fetchField();
-      
-      if (!$sended) {
-        $id = db_insert('simplenews_statistics')
-        	->fields(array('nid'=>$nid, 'send'=>1))
-        	->execute();
+  if (($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test')
+       && $message['params']['simplenews_source']->getFormat() == 'html') {
+    $node = $message['params']['simplenews_source']->getNode();
+    $nid = $node->nid;
+    $mail = $message['params']['simplenews_source']->getRecipient();
+    
+    // Need absolute urls.
+    _simplenews_statistics_absolute($message['body']);
+
+    // Parse body.
+    _simplenews_statistics_parse_links($message['body'], $nid, $mail);
+
+    // Add view image.
+    _simplenews_statistics_image_tag($message['body'], $nid, $mail);
+
+    // Count the number of sent mails for this newsletter if statistics are enabled.
+    // @todo: find a better way for doing this (maybe use Simplenews' built in counter?
+    if (variable_get('simplenews_statistics', 1)) {
+      $found = FALSE;
+      if($resultset = db_select('simplenews_statistics', 'ss')->fields('ss')->condition('ss.nid', $nid)->execute()){
+        foreach($resultset as $result){
+          $found = TRUE; //TODO: there has to be a better way to determine that we have found a record to update
+          db_update('simplenews_statistics')
+            ->fields(array(
+              'send' => ((int) $result->send) + 1,
+            ))
+          ->condition('nid', $nid)
+          ->execute();
+        }
       }
-      else {
-        $id = db_update('simplenews_statistics')
-        	->fields(array('send'=>$sended+1))
-        	->condition('nid',$nid,'=')
-        	->execute();
+      
+      if(!$found){
+        $record = new stdClass();
+        $record->send = 1;
+        $record->nid = $nid;
+        //TODO: add error reporting if insert fails
+        drupal_write_record('simplenews_statistics', $record);
       }
-     // krumo($message,$sended,$id);exit;
+    }
   }
-  
 }
 
 function _simplenews_statistics_absolute(&$body) {
@@ -190,255 +176,197 @@ function _simplenews_statistics_absolute(&$body) {
     foreach ($body as $key => $element) {
       _simplenews_statistics_absolute($body[$key]);
     }
-  }else{  
-    // R to A
+  }
+  else {
+    // R to A.
     $body = preg_replace(
-      '/(src|href)=(\'|")\//',
-      '$1=$2'. url('<front>', array('absolute' => TRUE)),
-      $body
+        '/(src|href)=(\'|")\//', '$1=$2' . url('<front>', array('absolute' => TRUE)), $body
     );
   }
 }
 
-/*
- * Parse links in the body
+/**
+ * Parse links in the body.
  */
 function _simplenews_statistics_parse_links(&$body, $nid, $mail) {
   if (is_array($body)) {
     foreach ($body as $key => $element) {
       _simplenews_statistics_parse_links($body[$key], $nid, $mail);
     }
-  }else{     
-    // Replace links   
+  }
+  else {
+    // Replace links.
     $pattern = '/(<a[^>]+href=")([^"]*)/emi';
     $body = preg_replace($pattern, '"\\1"._simplenews_statistics_replace_url("\2", $nid, $mail)', $body);
   }
 }
 
-/*
- * Add hidden image for view statistics
+/**
+ * Add hidden image for view statistics.
  */
 function _simplenews_statistics_image_tag(&$body, $nid, $mail) {
   if (is_array($body)) {
     foreach ($body as $key => $element) {
       _simplenews_statistics_image_tag($body[$key], $nid, $mail);
-      return; // Only once
+      return; // Only once.
     }
-  }else{  
-    require_once drupal_get_path('module', 'simplenews_statistics') .'/rc4.inc';
-      
-    // Add hidden image
-    $pars = 'nid='. check_plain($nid) .'&mail='. check_plain($mail);
-    $pars = rc4Encrypt(simplenews_private_key(), $pars);
+  }
+  else {
+    require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'simplenews_statistics') . '/includes/rc4.inc';
+
+    // Add hidden image.
+    $pars = 'nid=' . check_plain($nid) . '&mail=' . check_plain($mail);
+    $pars = _simplenews_statistics_rc4Encrypt(simplenews_private_key(), $pars);
     $pars_hash = md5($pars);
-    $url = url('simplenews/statistics/view', array('absolute' => TRUE, 'query' => array('p' => _simplenews_statistics_encode_parameter($pars), 
-                                                                                        'h' => _simplenews_statistics_encode_parameter($pars_hash))));
-    
-    $body .= '<img src="'. $url .'" width="1" height="1">';
+    $simplenews_statistics_internal_url = url('simplenews/statistics/view', array('absolute' => TRUE, 'query' => array('p' => _simplenews_statistics_encode_parameter($pars), 'h' => _simplenews_statistics_encode_parameter($pars_hash))));
+    // Use the "full-url"-option to get an absolute URL.
+    //$shortened_url = shorturl_shorten($simplenews_statistics_internal_url, TRUE);
+    $shortened_url = $simplenews_statistics_internal_url;
+
+    $body .= '<img src="' . $shortened_url . '" width="1" height="1">';
   }
 }
 
 /**
- * Statistics overview
+ * Statistics overview.
+ * @todo: finish
  */
-//altering simplenews_admin_issues_alter
-function simplenews_statistics_form_simplenews_admin_newsletter_issues_alter(&$form, &$form_state){
-	//krumo($form, $form_state);
-	//t('Open rate'), t('CTR'), t('Details')
-	//move operations to end
-	$op = $form['admin']['issues']['#header']['operations'];
-	unset($form['admin']['issues']['#header']['operations']);
-	
-	$header = array(
-		#'stat_sended' => array('data' => t('Emails Sent')),
-		'stat_open_rate' => array('data' => t('Open rate')),
-		'stat_ctr' => array('data' => t('CTR')),
-		'operations' =>$op,
-
-	);
-	$form['admin']['issues']['#header'] += $header;
-	
-	$nids = array_keys($form['admin']['issues']['#options']);
-	//get sended
-// 	$sended = db_select('simplenews_statistics','s')
-// 		->condition('nid',$nids,'IN')
-// 		->fields('s',array('nid','send'))
-// 		->execute()
-// 		->fetchAllKeyed();
-	//get clicks
-// 	$clicks = db_select('simplenews_statistics_clicks','c')
-// 		->condition('nid',$nids,'IN')
-// 		->fields('c',array('nid','url'))
-		#->groupBy('email')
-// 		->execute()
-// 		->fetchAllKeyed();
-	
-	//get opens
-// 	$opens = db_select('simplenews_statistics_opens','o')
-// 		->condition('nid',$nids,'IN')
-// 		->fields('o',array('nid'))
-// 		->groupBy('o.email')
-// 		->countQuery()
-// 		->execute();
-	
-	//get base stats
-	$base_stat = db_select('simplenews_statistics','s')
-		->condition('nid',$nids,'IN')
-		->fields('s')
-		->execute()
-		->fetchAllAssoc('nid');
-	
-	//krumo($form,$nids,$base_stat);
-	
-
-	foreach($form['admin']['issues']['#options'] as $row => $option){
-
-		#$form['admin']['issues']['#options'][$row]['stat_sended'] = !empty($base_stat[$row])?$base_stat[$row]->send : 0 ;
-		$form['admin']['issues']['#options'][$row]['stat_open_rate'] = !empty($base_stat[$row])?$base_stat[$row]->opens : 0 ;
-		$form['admin']['issues']['#options'][$row]['stat_ctr'] = !empty($base_stat[$row])?$base_stat[$row]->clicks : 0 ;
-		$form['admin']['issues']['#options'][$row]['operations'] .= '  '.l(t('stats'), 'admin/content/simplenews/statistics/'.$row);
-	}
-}
-
-
-/**
- * Newsletter opens overview
- */
-function simplenews_statistics_admin_opens($form,&$form_state, $node = NULL) {
-  drupal_set_title(check_plain($node->title).'  '.t('Opens overview'));
+function simplenews_statistics_admin_form($form, &$form_state, $action = 'sent') {
+  drupal_set_title(t('Newsletter Statistics'));
   $form = array();
-  // Build the sortable table header.
-  $header=array(
-  	'email' => array('data' => t('Email'), 'field' => 'o.email'),
-  	'open_time' => array('data' => t('Last open time'), 'field' => 'o.timestamp', 'sort' => 'desc'),
-  	'opens' => array('data' => t('Open(s)'), 'field' => 'o.opens'),
-  );
-  
-  //get data 
-  $query = db_select('simplenews_statistics_opens', 'o')->extend('PagerDefault')->extend('TableSort');
-  $result = $query
-	  ->fields('o')
-  	  ->condition('nid',$node->nid,'=')
-	  ->limit(80)
-	  ->orderByHeader($header)
-	  ->execute();
-  
-  //build table content
-  $options = array();
-  $total_count = 0;
-  foreach ($result as $stat){
-  	$options[]=array(
-  		'email' => $stat->email,
-  		'open_time' => format_date($stat->timestamp),
-  		'opens' => $stat->opens,
-  	);
-  	$total_count = $total_count+$stat->opens;
-  }
-  $form['total_inf'] = array(
-    	'#markup' => '<b>'.t('Total opens').':</b> '.$total_count,
-  );
-  $form['stat_opens'] = array(
-  	'#type' => 'tableselect', 
-  	'#header' => $header,
-  	'#options' => $options, 
-  	'#empty' => t('No stats available'), 
-  );
-  $form['pager'] = array('#markup' => theme('pager'));
 
+  $table = array();
+  $table['header'] = array(t('Title'), t('Newsletter'), t('Date created'), t('Sent'), t('Open rate'), t('CTR'), t('Details'));
+
+  $query = db_select('simplenews_statistics', 'ss');
+  $query->innerJoin('node', 'n', 'n.nid=ss.nid'); //important: we ignore the alias, it could be needed though
+  $query->innerJoin('field_data_field_simplenews_term', 'fdfst', 'n.nid = fdfst.entity_id AND n.vid = fdfst.revision_id');
+  $query->innerJoin('taxonomy_term_data', 'ttd', 'fdfst.field_simplenews_term_tid = ttd.tid');
+  $query->innerJoin('simplenews_category', 'sc', 'fdfst.field_simplenews_term_tid = sc.tid');
+  $query->condition('fdfst.entity_type', 'node');
+  $query->fields('n', array('nid', 'title', 'created'));
+  $query->fields('ttd', array('name'));
+  $query->fields('ss', array('send', 'unique_opens', 'user_unique_click_through'));
+  $query->orderBy('n.created', 'DESC');
+  
+  $resultset = $query->execute();
+  
+  //drupal_set_message('<pre>' . print_r($resultset, 1) . '</pre>');
+
+  $table['rows'] = array();
+  if($resultset->rowCount()){
+    foreach ($resultset as $result) {
+      $table['rows'][] = array(
+        l($result->title, 'node/' . $result->nid),
+        isset($result->name) ? $result->name : t('n/a'),
+        format_date($result->created, 'short'),
+        $result->send,
+        ($result->send > 0) ? round($result->unique_opens / $result->send * 100) . ' %' : t('n/a'),
+        ($result->send > 0) ? round($result->user_unique_click_through / $result->send * 100) . ' %' : t('n/a'),
+        l(t('opens'), 'admin/content/simplenews/statistics/' . $result->nid) . ' ' . l(t('clicks'), 'admin/content/simplenews/statistics/' . $result->nid . '/clicks'),
+      );
+    }
+  } else {
+    $table['rows'][] = array(array(
+      'data' => t('No newsletters available.'),
+      'colspan' => '7',
+    ));
+  }
+  
+  //tables cannot be added to markup - unlike in Drupal 6
+  $form['table'] = array(
+    '#type' => 'fieldset',
+    '#description' => theme('table', $table),
+  );
+  
   return $form;
 }
 
 /**
- * Newsletter clicks overview
+ * Alter link to go through statistics.
  */
-function simplenews_statistics_admin_clicks($form,&$form_state, $node = NULL) {
-  drupal_set_title(check_plain($node->title). '  ' .t('Clicks overview'));
-  $form = array();
-
-  // Build the sortable table header.
-  $header=array(
-    	'url' => array('data' => t('Url'), 'field' => 'c.url'),
-  		'email' => array('data' => t('Email'), 'field' => 'c.email'),
-    	'open_time' => array('data' => t('Click time'), 'field' => 'c.timestamp', 'sort' => 'desc'),
-  );
-  //get data
-  $query = db_select('simplenews_statistics_clicks', 'c')->extend('PagerDefault')->extend('TableSort');
-  $result = $query
-	  ->fields('c')
-	  ->condition('nid',$node->nid,'=')
-	  ->limit(80)
-	  ->orderByHeader($header)
-	  ->execute();
-  
-  //build table content
-  $options = array();
-  foreach ($result as $stat){
-  	//krumo($stat);
-  	$options[]=array(
-  		'url'=> l(check_plain($stat->url),$stat->url,array('attributes'=>array('target'=>'_blank'))),
-  	  	'email' => $stat->email,
-  	  	'open_time' => format_date($stat->timestamp),
-  	);
-  }
-  $form['total_inf'] = array(
-  	'#markup' => '<b>'.t('Total clicks').':</b> '.count($options),
-  );
-
-  $form['stat_opens'] = array(
-    	'#type' => 'tableselect', 
-    	'#header' => $header,
-    	'#options' => $options, 
-    	'#empty' => t('No stats available'), 
-  );
-  $form['pager'] = array('#markup' => theme('pager'));
-  return $form;
-}
-
-/**
- * Helper functions
- */ 
- 
-/**
-* Alter link to go through statistics
-*/
 function _simplenews_statistics_replace_url($match, $nid, $mail) {
-  if (substr($match, 0, 1) == "#")
+  if (substr($match, 0, 1) == '#') {
     return $match;
+  }
 
-  require_once drupal_get_path('module', 'simplenews_statistics') .'/rc4.inc';
-  $pars = 'nid='. check_plain($nid) .'&mail='. check_plain($mail) .'&url='. check_url($match);
-  $pars = rc4Encrypt(simplenews_private_key(), $pars);
+  //correct format - do not use module_load_include function
+  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'simplenews_statistics') . '/includes/rc4.inc';
+  $pars = 'nid=' . check_plain($nid) . '&mail=' . check_plain($mail) . '&url=' . check_url($match);
+  $pars = _simplenews_statistics_rc4Encrypt(simplenews_private_key(), $pars);
   $pars_hash = md5($pars);
+
+  $simplenews_statistics_internal_url = url('simplenews/statistics/click', array('absolute' => TRUE, 'query' => array('p' => _simplenews_statistics_encode_parameter($pars), 'h' => _simplenews_statistics_encode_parameter($pars_hash))));
+  return $simplenews_statistics_internal_url; //when the shorturl module is ready for D7, then we will add support again!
   
-  return url('simplenews/statistics/click', array('absolute' => TRUE, 'query' => array('p' => _simplenews_statistics_encode_parameter($pars), 
-                                                                                       'h' => _simplenews_statistics_encode_parameter($pars_hash))));
+  // Use the "full-url"-option to get an absolute URL.
+  //$shortened_url = shorturl_shorten($simplenews_statistics_internal_url, TRUE);
+
+  //return $shortened_url;
 }
 
- /**
- * Decode a request
+/**
+ * Add Google Analytics codes to a raw encoded/encrypted URL.
+ * @todo write
+ */
+function _simplenews_statistics_add_ga(&$url, $nid) {
+  $ga_tracking = variable_get('simplenews_statistics_ga', 0);
+
+  if ($ga_tracking == 1 && module_exists('googleanalytics')) {
+    $campaign = variable_get('simplenews_analytics_utm_campaign', '!newsletter_title');
+    if ($campaign == '!newsletter_title') {
+      $node = node_load($nid);
+      $campaign = $node->title;
+    }
+
+    if (variable_get('simplenews_statistics_ga_use_hash', 0)) {
+      $url .= '#utm_source=' . drupal_encode_path(variable_get('simplenews_analytics_utm_source', 'newsletter'));
+    }
+    else {
+      if (stristr($url, '?')) {
+        $url .= '&utm_source=' . drupal_encode_path(variable_get('simplenews_analytics_utm_source', 'newsletter'));
+      }
+      else {
+        $url .= '?utm_source=' . drupal_encode_path(variable_get('simplenews_analytics_utm_source', 'newsletter'));
+      }
+    }
+
+    $url .= '&utm_medium=' . drupal_encode_path(variable_get('simplenews_analytics_utm_medium', 'email'));
+    $url .= '&utm_campaign=' . drupal_encode_path($campaign);
+  }
+}
+
+/**
+ * Decode a request.
+ * @todo check
  */
 function _simplenews_statistics_decode($values) {
   $pars = $values['p'];
   $pars_hash = $values['h'];
-  
+
   if (isset($pars) && isset($pars_hash)) {
     $pars = _simplenews_statistics_decode_parameter($pars);
     $pars_hash = _simplenews_statistics_decode_parameter($pars_hash);
-  
+
     if (md5($pars) == $pars_hash) {
-      require_once drupal_get_path('module', 'simplenews_statistics') .'/rc4.inc';
-      $pars = rc4Encrypt(simplenews_private_key(), $pars);
+      require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'simplenews_statistics') . '/includes/rc4.inc';
+      $pars = _simplenews_statistics_rc4Decrypt(simplenews_private_key(), $pars);
       parse_str($pars, $stat);
     }
   }
-  
+
   foreach ($stat as $idx => $stat_param) {
     if ($idx != 'nid' && $idx != 'mail' && $idx != 'url') {
       $idx = str_replace('amp;', '', $idx);
-      $stat['url'] = $stat['url'] .'&'. $idx .'='. $stat_param;
+      if (stristr($stat['url'], '?')) {
+        $stat['url'] = $stat['url'] . '&' . $idx . '=' . $stat_param;
+      }
+      else {
+        $stat['url'] = $stat['url'] . '?' . $idx . '=' . $stat_param;
+      }
     }
   }
-  
+
   return $stat;
 }
 
@@ -450,27 +378,84 @@ function _simplenews_statistics_decode_parameter($par) {
   return unserialize(gzuncompress(stripslashes(base64_decode(strtr($par, '-_,', '+/=')))));
 }
 
-/*
- * Add click to total
+/**
+ * Register click.
  */
-function _simplenews_statistics_click_add($nid) {
-	db_query("UPDATE {simplenews_statistics} SET clicks = clicks+1 WHERE nid = :nid",array(':nid'=>$nid));
-}
+function _simplenews_statistics_click_add($stat) {
+  // Check if this is a unique click for the newsletter-mail combination.
+  $query = db_select('simplenews_statistics_clicks', 'ssc');
+  $query->fields('ssc', array('nid'));
+  $query->condition('email', $stat['mail']);
+  $query->condition('nid', $stat['nid']);
+  $query->range(0, 1);
+  $resultset = $query->execute();
+  
+  //TODO: correctly get the count from the resultset object
+  $unique = ($resultset->rowCount() ? FALSE : TRUE);
+  
+  if($unique){
+    $query = db_update('simplenews_statistics');
+    $query->expression('user_unique_click_through', 'user_unique_click_through + 1');
+    $query->condition('nid', $stat['nid']);
+    $query->execute();
+  }
+  
+  // Update the total click amount.
+  $query = db_update('simplenews_statistics');
+  $query->expression('total_clicks', 'total_clicks + 1');
+  $query->condition('nid', $stat['nid']);
+  $query->execute();
 
-/*
- * Add open to total
- */
-function _simplenews_statistics_open_add($nid) {
-  db_query("UPDATE {simplenews_statistics} SET opens = opens+1 WHERE nid = :nid", array(':nid'=>$nid));
+  // Register the individual click.
+  $record = new stdClass();
+  $record->email = $stat['mail'];
+  $record->nid = $stat['nid'];
+  $record->url = urldecode($stat['url']);
+  $record->timestamp = REQUEST_TIME;
+  drupal_write_record('simplenews_statistics_clicks', $record);
 }
 
 /**
- * Implementation of hook_views_api().
+ * Add open to total.
+ */
+function _simplenews_statistics_open_add($stat) {
+  // Check if this is a unique open for the newsletter-mail combination.
+  $query = db_select('simplenews_statistics_opens', 'sso');
+  $query->fields('sso', array('nid'));
+  $query->condition('email', $stat['mail']);
+  $query->condition('nid', $stat['nid']);
+  $query->range(0, 1);
+  $resultset = $query->execute();
+  
+  $unique = ($resultset->rowCount() ? FALSE : TRUE);
+  
+  if($unique){
+    $query = db_update('simplenews_statistics');
+    $query->expression('unique_opens', 'unique_opens + 1');
+    $query->condition('nid', $stat['nid']);
+    $query->execute();
+  }
 
+  // Update the total opens amount.
+  $query = db_update('simplenews_statistics');
+  $query->expression('total_opens', 'total_opens + 1');
+  $query->condition('nid', $stat['nid']);
+  $query->execute();
+
+  // Register the individual open.
+  $record = new stdClass();
+  $record->email = $stat['mail'];
+  $record->nid = $stat['nid'];
+  $record->timestamp = REQUEST_TIME;
+  drupal_write_record('simplenews_statistics_opens', $record);
+}
+
+/**
+ * Implements hook_views_api().
+ */
 function simplenews_statistics_views_api() {
   return array(
     'api' => '2.0',
-    'path' => drupal_get_path('module', 'simplenews_statistics') .'/views',
+    'path' => drupal_get_path('module', 'simplenews_statistics') . '/includes/views',
   );
 }
- */

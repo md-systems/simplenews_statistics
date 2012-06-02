@@ -1,0 +1,222 @@
+<?php 
+
+/**
+ * @file
+ * Simplenews Statistics test functions.
+ *
+ * @ingroup simplenews_statistics
+ * @see SimplenewsTestCase
+ */
+
+class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
+  
+  private $newsletter_nid = NULL;
+  
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+        'name' => t('Simplenews Statistics'),
+        'description' => t('Tests newsletter statistic procedures for the simplenews module.'),
+        'group' => t('Simplenews'),
+    );
+  }
+  
+  function setUp($modules = array()) {
+    $modules = array_merge(array('simplenews_statistics'), $modules);
+    
+    parent::setUp($modules);
+  
+    /**
+     * @var $user
+     *   Create a user with all simplenews, simplenews statistics and core permissions 
+     */
+    $this->user = $this->drupalCreateUser(array(
+      'administer newsletter statistics', 
+      'view newsletters statistics', 
+      'administer newsletters', 
+      'send newsletter', 
+      'administer nodes', 
+      'administer simplenews subscriptions', 
+      'create simplenews content', 
+      'edit any simplenews content', 
+      'view own unpublished content', 
+      'delete any simplenews content',
+    ));
+    $this->drupalLogin($this->user);
+  
+    // Subscribe a few users. Use a higher amount because we want to test statistics
+    $this->setUpSubscribers(37);
+  }
+  
+  /**
+   * Function that will create a newsletter in the default category
+   * 
+   * @see SimplenewsSourceTestCase::testSendHTML
+   */
+  private function createNewsletter(){
+    // Use custom testing mail system to support HTML mails.
+    variable_set('mail_system', array('default-system' => 'SimplenewsHTMLTestingMailSystem'));
+
+    // Set the format to HTML.
+    $this->drupalGet('admin/config/services/simplenews');
+    $this->clickLink(t('edit newsletter category'));
+    $edit_category = array(
+      'format' => 'html',
+      // Use umlaut to provoke mime encoding.
+      'from_name' => 'Drupäl Simplenews Statistic Testing',
+      // @todo: load the website default email
+      'from_address' => $this->randomEmail(),
+      // Request a confirmation receipt.
+      'receipt' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit_category, t('Save'));
+
+    $edit = array(
+      'title' => $this->randomName(),
+      'body[und][0][value]' => "Mail token: <strong>[simplenews-subscriber:mail]</strong>",
+    );
+    $this->drupalPost('node/add/simplenews', $edit, ('Save'));
+    $this->assertTrue(preg_match('|node/(\d+)$|', $this->getUrl(), $matches), 'Node created');
+    $node = node_load($matches[1]);
+    $this->newsletter_nid = $node->nid;
+  }
+  
+  /**
+   * Function that will create a newsletter in the default category and publish it
+   */
+  private function createAndPublishNewsletter(){
+    $this->createNewsletter();
+    
+    $node = node_load($this->newsletter_nid);
+    $node->status = 1;
+    node_save($node);
+  }
+  
+  /**
+   * Function that will create a newsletter in the default category and send it
+   */
+  private function createAndSendNewsletter(){
+    $this->createAndPublishNewsletter();
+    
+    $node = node_load($this->newsletter_nid);
+
+    // Send the node.
+    simplenews_add_node_to_spool($node);
+
+    // Send mails.
+    simplenews_mail_spool();
+  }
+  
+  /**
+   * Test Newsletter Substitution Logic: Open Image Counter
+   * 
+   * simulate testSendPublishNoCron for almost all cases
+   * send a newsletter, test that the image counter is properly added to the message
+   */
+  function testOpenCounterImageInserted(){
+    $this->createAndSendNewsletter();
+
+    // Get the last mail that has been sent.
+    $email = array_shift($this->drupalGetMails());
+    
+    //evaluate that the image counter has been added
+    drupal_set_message('<pre>' . print_r($email, 1) . '</pre>');
+    
+    return false;
+  }
+  
+  /**
+   * Test Newsletter Substitution Logic: Link Replace
+   * 
+   * send a newsletter, test that the link is properly formatted for click statistics
+   */
+  function testClickStatisticLinkReplaceInserted(){
+    return false;
+  }
+  
+  /**
+   * Test Statistic Logic: Open Rate
+   * 
+   * test that calling the URL /simplenews/statistics/view for the node
+   * properly updates the statistics
+   */
+  function testCallOpenStatisticURLDirectlyAndCheckDatabaseOpenRateUpdate(){
+    return false;
+  }
+  
+  /**
+   * Test Statistic Logic: Click Rate
+   * 
+   * test that calling the URL /simplenews/statistics/click for the node
+   * properly updates the statistics
+   */
+  function testCallClickStatisticURLDirectlyAndCheckDatabaseClickRateUpdate(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Statistic Open Rate Updated 
+   * 
+   * send a newsletter, open it, test that the open statistics is properly updated
+   */
+  function testOpenStatisticUpdate(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Statistic Click Rate Updated 
+   * 
+   * send a newsletter, open it, click a link, test that the click statistics is properly updated
+   */
+  function testClickStatisticUpdate(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Redirected to correct page
+   * 
+   * send a newsletter, click a link, test that the user is forwarded to the correct page
+   */
+  function testClickStatisticLinkRedirect(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Open Rate for unpublished Newsletter is not updated
+   * 
+   * send a newsletter, click a link, test that the user is forwarded to the correct page
+   */
+  function testUnpublishedNewsletterOpenStatistic(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Click Rate for unpublished Newsletter is not updated
+   * 
+   * send a newsletter, click a link, test that the user is forwarded to the correct page
+   */
+  function testUnpublishedNewsletterClickStatistic(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Open Rate for non-Newsletter entity is not counted
+   * 
+   * test that if the URL is called with an improper node id, that it is not updated
+   */
+  function testNonNewsletterOpenStatistic(){
+    return false;
+  }
+  
+  /**
+   * Test Workflow: Open Rate for non-Newsletter entity is not counted
+   * 
+   * test that if the URL is called with an improper node id, that it is not updated
+   */
+  function testNonNewsletterClickStatistic(){
+    return false;
+  }
+  
+}

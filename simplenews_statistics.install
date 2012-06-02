@@ -2,24 +2,11 @@
 
 /**
  * @file
- * Simplenews Statistics installation.
+ * Simplenews statistics (un)install and updates file.
  */
-function simplenews_statistics_install(){
-	//get alredy sended
-	$result = db_select('simplenews_newsletter','s')
-		->condition('status','1','>=')
-		->fields('s',array('nid'))
-		->execute()
-		->fetchCol();
-	//add alredy sended to own table
-	$query = db_insert('simplenews_statistics')->fields(array('nid'));
-	foreach($result as $nid){
-		$query->values(array('nid'=>$nid));
-	}
-	$query->execute();
-}
+
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function simplenews_statistics_schema() {
   $schema['simplenews_statistics'] = array(
@@ -38,34 +25,42 @@ function simplenews_statistics_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'clicks' => array(
+      'total_clicks' => array(
         'description' => 'Total clicks for this newsletter',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'opens' => array(
+      'total_opens' => array(
         'description' => 'Total opens for this newsletter',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
+      'unique_opens' => array(
+        'description' => 'Emailaddress-unique opens for this newsletter',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'user_unique_click_through' => array(
+        'description' => 'Number of users who have clicked at least one link in the newsletter',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
-  	'foreign keys' => array(
-        'nid' => array(
-          'table' => 'node',
-          'columns' => array('nid' => 'nid'),
- 		),
-  	),
     'primary key' => array('nid'),
   );
 
   $schema['simplenews_statistics_clicks'] = array(
     'description' => 'Newsletter Clicks',
     'fields' => array(
-       'email' => array(
+      'email' => array(
         'description' => 'Primary key: Email.',
         'type' => 'varchar',
         'not null' => TRUE,
@@ -93,13 +88,6 @@ function simplenews_statistics_schema() {
         'default' => 0,
       ),
     ),
-  	'primary key' => array('timestamp'),
-  	'foreign keys' => array(
-        'nid' => array(
-            'table' => 'node',
-            'columns' => array('nid' => 'nid'),
-  		),
-  	),
   );
 
   $schema['simplenews_statistics_opens'] = array(
@@ -118,13 +106,6 @@ function simplenews_statistics_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'opens' => array(
-        'description' => 'Amount of opens',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
       'timestamp' => array(
         'description' => 'Time of view',
         'type' => 'int',
@@ -133,14 +114,28 @@ function simplenews_statistics_schema() {
         'default' => 0,
       ),
     ),
-  	'primary key' => array('timestamp'),
-  	'foreign keys' => array(
-        'nid' => array(
-           'table' => 'node',
-           'columns' => array('nid' => 'nid'),
-  		),
-  	),
   );
   return $schema;
 }
 
+/**
+ * Implements hook_install().
+ */
+function simplenews_statistics_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function simplenews_statistics_uninstall() {
+  variable_del('simplenews_statistics_ga_utm_source');
+  variable_del('simplenews_statistics_ga_utm_medium');
+  variable_del('simplenews_statistics_ga_utm_campaign');
+}
+
+/**
+ * #7000: 6.x-3.x to 7.x-1.x upgrade.
+ */
+function simplenews_statistics_update_7000() {
+  //@todo
+}
