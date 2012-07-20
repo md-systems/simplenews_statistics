@@ -16,6 +16,14 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
     '#default_value' => variable_get('simplenews_statistics', 1),
   );
 
+  $form['simplenews_statistics_track_emailaddress'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Track mailto links'),
+    '#description' => t('In some cases tracking clicks on emailaddresses wil result in a blank browser window.
+        Disabling this options prevents that.'),
+    '#default_value' => variable_get('simplenews_statistics_track_emailaddress', 1),
+  );
+
   // Settings for Google Analytics.
   $ga_account = variable_get('googleanalytics_account', 'UA-');
   $form['simplenews_statistics_ga_settings'] = array(

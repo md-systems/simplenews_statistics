@@ -286,8 +286,15 @@ function simplenews_statistics_admin_form($form, &$form_state, $action = 'sent')
  * Alter link to go through statistics.
  */
 function _simplenews_statistics_replace_url($match, $nid, $mail) {
-  if (substr($match, 0, 1) == '#') {
+  // Do not replace anchor-links
+  if (substr($match, 0, 1) == '#')
     return $match;
+
+  $track_emailaddress = variable_get('simplenews_statistics_track_emailaddress', 1);
+  if ($track_emailaddress == 0) {
+    if (substr($match, 0, 7) == 'mailto:') {
+      return $match;
+    }
   }
 
   //correct format - do not use module_load_include function
