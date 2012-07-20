@@ -17,14 +17,13 @@ function simplenews_statistics_menu() {
     'page arguments' => array('simplenews_statistics_admin_form'),
     'access callback' => 'simplenews_statistics_access',
   );
-  $items['admin/config/simplenews/statistics'] = array(
-    'title' => 'Simplenews Statistics Settings',
-    'type' => MENU_NORMAL_ITEM,
+  $items['admin/config/services/simplenews/statistics'] = array(
+    'title' => 'Statistics Settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simplenews_statistics_admin_settings_form'),
     'access arguments' => array('administer newsletter statistics'),
     'file' => 'simplenews_statistics.admin.inc',
-    'weight' => -7.9,
+    'type' => MENU_LOCAL_TASK,
   );
   $items['simplenews/statistics/view'] = array(
     'type' => MENU_CALLBACK,

@@ -3,6 +3,6 @@ description = "Gathers newsletter statistics"
 files[] = tests/simplenews_statistics.test
 dependencies[] = simplenews
 dependencies[] = views
-configure = admin/config/simplenews/statistics
+configure = admin/config/services/simplenews/statistics
 package = Mail
 core = 7.x
