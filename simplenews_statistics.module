@@ -70,24 +70,11 @@ function simplenews_statistics_access($node = NULL) {
 
 /**
  * Implements hook_help().
+ *
+ * @todo: re-implement
  */
 function simplenews_statistics_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#simplenews_statistics':
-      $help = '<p>' . t('Simplenews Statistics gathers the open rate and CTR of a send newsletter.') . "<br />\n";
-      $help .= t("Open Rate is the number of people who open a newsletter divided by the amount of subscriptions.") . "<br />\n";
-      $help .= t("CTR (click-through rate) is the number of people who clicked a link in a newsletter divided by the amount of subscriptions") . "</p>\n";
-      return $help;
-    case 'admin/content/simplenews/statistics':
-      $help = '<p>' . t('Shows the open rate and CTR for your newsletters.') . "<p>\n";
-      return $help;
-    case 'admin/content/simplenews/statistics/%':
-      $help = '<p>' . t('Shows who and how many times the newsletter has been openend.') . "<p>\n";
-      return $help;
-    case 'admin/content/simplenews/statistics/%/clicks':
-      $help = '<p>' . t('Listing of all clicks for the newsletter.') . "<p>\n";
-      return $help;
-  }
+
 }
 
 /**
