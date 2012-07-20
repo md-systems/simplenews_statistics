@@ -9,21 +9,13 @@
  * Implements hook_menu().
  */
 function simplenews_statistics_menu() {
-  $items['admin/content/simplenews/statistics'] = array(
-    'title' => 'Statistics',
-    'description' => 'View the openings/rate and clicks/CTR for your newsletters',
-    'type' => MENU_NORMAL_ITEM,
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('simplenews_statistics_admin_form'),
-    'access callback' => 'simplenews_statistics_access',
-  );
   $items['admin/config/services/simplenews/statistics'] = array(
-    'title' => 'Statistics Settings',
+    'title' => 'Statistics',
+    'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simplenews_statistics_admin_settings_form'),
     'access arguments' => array('administer newsletter statistics'),
     'file' => 'simplenews_statistics.admin.inc',
-    'type' => MENU_LOCAL_TASK,
   );
   $items['simplenews/statistics/view'] = array(
     'type' => MENU_CALLBACK,
@@ -214,61 +206,6 @@ function _simplenews_statistics_image_tag(&$body, $nid, $mail) {
 }
 
 /**
- * Statistics overview.
- * @todo: finish
- */
-function simplenews_statistics_admin_form($form, &$form_state, $action = 'sent') {
-  drupal_set_title(t('Newsletter Statistics'));
-  $form = array();
-
-  $table = array();
-  $table['header'] = array(t('Title'), t('Newsletter'), t('Date created'), t('Sent'), t('Open rate'), t('CTR'), t('Details'));
-
-  $query = db_select('simplenews_statistics', 'ss');
-  $query->innerJoin('node', 'n', 'n.nid=ss.nid'); //important: we ignore the alias, it could be needed though
-  $query->innerJoin('field_data_field_simplenews_term', 'fdfst', 'n.nid = fdfst.entity_id AND n.vid = fdfst.revision_id');
-  $query->innerJoin('taxonomy_term_data', 'ttd', 'fdfst.field_simplenews_term_tid = ttd.tid');
-  $query->innerJoin('simplenews_category', 'sc', 'fdfst.field_simplenews_term_tid = sc.tid');
-  $query->condition('fdfst.entity_type', 'node');
-  $query->fields('n', array('nid', 'title', 'created'));
-  $query->fields('ttd', array('name'));
-  $query->fields('ss', array('send', 'unique_opens', 'user_unique_click_through'));
-  $query->orderBy('n.created', 'DESC');
-
-  $resultset = $query->execute();
-
-  //drupal_set_message('<pre>' . print_r($resultset, 1) . '</pre>');
-
-  $table['rows'] = array();
-  if($resultset->rowCount()){
-    foreach ($resultset as $result) {
-      $table['rows'][] = array(
-        l($result->title, 'node/' . $result->nid),
-        isset($result->name) ? $result->name : t('n/a'),
-        format_date($result->created, 'short'),
-        $result->send,
-        ($result->send > 0) ? round($result->unique_opens / $result->send * 100) . ' %' : t('n/a'),
-        ($result->send > 0) ? round($result->user_unique_click_through / $result->send * 100) . ' %' : t('n/a'),
-        l(t('opens'), 'admin/content/simplenews/statistics/' . $result->nid) . ' ' . l(t('clicks'), 'admin/content/simplenews/statistics/' . $result->nid . '/clicks'),
-      );
-    }
-  } else {
-    $table['rows'][] = array(array(
-      'data' => t('No newsletters available.'),
-      'colspan' => '7',
-    ));
-  }
-
-  //tables cannot be added to markup - unlike in Drupal 6
-  $form['table'] = array(
-    '#type' => 'fieldset',
-    '#description' => theme('table', $table),
-  );
-
-  return $form;
-}
-
-/**
  * Alter link to go through statistics.
  */
 function _simplenews_statistics_replace_url($match, $nid, $mail) {
@@ -383,7 +320,7 @@ function _simplenews_statistics_click_add($stat) {
   $query->range(0, 1);
   $resultset = $query->execute();
 
-  //TODO: correctly get the count from the resultset object
+  // @todo: correctly get the count from the resultset object
   $unique = ($resultset->rowCount() ? FALSE : TRUE);
 
   if($unique){
@@ -448,7 +385,7 @@ function _simplenews_statistics_open_add($stat) {
  */
 function simplenews_statistics_views_api() {
   return array(
-    'api' => '2.0',
+    'api' => '3.0',
     'path' => drupal_get_path('module', 'simplenews_statistics') . '/includes/views',
   );
 }
