@@ -88,6 +88,11 @@ function simplenews_statistics_schema() {
         'default' => 0,
       ),
     ),
+    'primary key' => array('email', 'nid', 'timestamp', 'url'),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'nid_click_url' => array('nid', 'url'),
+    ),
   );
 
   $schema['simplenews_statistics_opens'] = array(
@@ -114,6 +119,11 @@ function simplenews_statistics_schema() {
         'default' => 0,
       ),
     ),
+    'primary key' => array('email', 'nid', 'timestamp'),
+    'indexes' => array(
+      'email' => array('email'),
+      'nid' => array('nid'),
+    ),
   );
   return $schema;
 }
@@ -138,4 +148,18 @@ function simplenews_statistics_uninstall() {
  */
 function simplenews_statistics_update_7000() {
   //@todo
+}
+
+/**
+ * #7001: add proper table indexes to simplenews_statistics_clicks and simplenews_statistics_opens tables
+ */
+function simplenews_statistics_update_7001() {
+  //add missing indexes
+  db_add_primary_key('simplenews_statistics_clicks', array('email', 'nid', 'timestamp', 'url'));
+  db_add_index('simplenews_statistics_clicks', 'nid', array('nid'));
+  db_add_index('simplenews_statistics_clicks', 'nid_click_url', array('nid', 'url'));
+
+  db_add_primary_key('simplenews_statistics_opens', array('email', 'nid', 'timestamp'));
+  db_add_index('simplenews_statistics_opens', 'email', array('email'));
+  db_add_index('simplenews_statistics_opens', 'nid', array('nid'));
 }
