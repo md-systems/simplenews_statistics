@@ -28,7 +28,7 @@ function simplenews_statistics_menu() {
   );
   $items['simplenews/statistics/view'] = array(
     'type' => MENU_CALLBACK,
-    'page callback' => 'simplenews_statistics_view',
+    'page callback' => 'simplenews_statistics_open',
     'access arguments' => array('access content'),
   );
   $items['simplenews/statistics/click'] = array(
@@ -93,7 +93,7 @@ function simplenews_statistics_help($path, $arg) {
 /**
  * Gathers the opens.
  */
-function simplenews_statistics_view() {
+function simplenews_statistics_open() {
   $stat = _simplenews_statistics_decode($_GET);
 
   if ($stat['mail'] && $stat['nid'] && variable_get('simplenews_statistics', 1)) {
@@ -128,13 +128,13 @@ function simplenews_statistics_click() {
  * Adds a hidden image to the body and counts the amount of emails send.
  */
 function simplenews_statistics_mail_alter(&$message) {
-    
+
   if (($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test')
        && $message['params']['simplenews_source']->getFormat() == 'html') {
     $node = $message['params']['simplenews_source']->getNode();
     $nid = $node->nid;
     $mail = $message['params']['simplenews_source']->getRecipient();
-    
+
     // Need absolute urls.
     _simplenews_statistics_absolute($message['body']);
 
@@ -159,7 +159,7 @@ function simplenews_statistics_mail_alter(&$message) {
           ->execute();
         }
       }
-      
+
       if(!$found){
         $record = new stdClass();
         $record->send = 1;
@@ -248,9 +248,9 @@ function simplenews_statistics_admin_form($form, &$form_state, $action = 'sent')
   $query->fields('ttd', array('name'));
   $query->fields('ss', array('send', 'unique_opens', 'user_unique_click_through'));
   $query->orderBy('n.created', 'DESC');
-  
+
   $resultset = $query->execute();
-  
+
   //drupal_set_message('<pre>' . print_r($resultset, 1) . '</pre>');
 
   $table['rows'] = array();
@@ -272,13 +272,13 @@ function simplenews_statistics_admin_form($form, &$form_state, $action = 'sent')
       'colspan' => '7',
     ));
   }
-  
+
   //tables cannot be added to markup - unlike in Drupal 6
   $form['table'] = array(
     '#type' => 'fieldset',
     '#description' => theme('table', $table),
   );
-  
+
   return $form;
 }
 
@@ -305,7 +305,7 @@ function _simplenews_statistics_replace_url($match, $nid, $mail) {
 
   $simplenews_statistics_internal_url = url('simplenews/statistics/click', array('absolute' => TRUE, 'query' => array('p' => _simplenews_statistics_encode_parameter($pars), 'h' => _simplenews_statistics_encode_parameter($pars_hash))));
   return $simplenews_statistics_internal_url; //when the shorturl module is ready for D7, then we will add support again!
-  
+
   // Use the "full-url"-option to get an absolute URL.
   //$shortened_url = shorturl_shorten($simplenews_statistics_internal_url, TRUE);
 
@@ -396,17 +396,17 @@ function _simplenews_statistics_click_add($stat) {
   $query->condition('nid', $stat['nid']);
   $query->range(0, 1);
   $resultset = $query->execute();
-  
+
   //TODO: correctly get the count from the resultset object
   $unique = ($resultset->rowCount() ? FALSE : TRUE);
-  
+
   if($unique){
     $query = db_update('simplenews_statistics');
     $query->expression('user_unique_click_through', 'user_unique_click_through + 1');
     $query->condition('nid', $stat['nid']);
     $query->execute();
   }
-  
+
   // Update the total click amount.
   $query = db_update('simplenews_statistics');
   $query->expression('total_clicks', 'total_clicks + 1');
@@ -433,9 +433,9 @@ function _simplenews_statistics_open_add($stat) {
   $query->condition('nid', $stat['nid']);
   $query->range(0, 1);
   $resultset = $query->execute();
-  
+
   $unique = ($resultset->rowCount() ? FALSE : TRUE);
-  
+
   if($unique){
     $query = db_update('simplenews_statistics');
     $query->expression('unique_opens', 'unique_opens + 1');
