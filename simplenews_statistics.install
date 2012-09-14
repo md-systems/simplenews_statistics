@@ -163,3 +163,17 @@ function simplenews_statistics_update_7001() {
   db_add_index('simplenews_statistics_opens', 'email', array('email'));
   db_add_index('simplenews_statistics_opens', 'nid', array('nid'));
 }
+
+/**
+ * Clear all statitics for deleted nodes
+ */
+function simplenews_statistics_update_7002() {
+  // Remove all statistics for nodes that don't exist anymore
+  // do not use db_delete here as we are using the subquery. Keep the MySQL efficient.
+  $query = 'DELETE FROM {simplenews_statistics} WHERE nid NOT IN (SELECT nid FROM {node})';
+  db_query($query);
+  $query = 'DELETE FROM {simplenews_statistics_clicks} WHERE nid NOT IN (SELECT nid FROM {node})';
+  db_query($query);
+  $query = 'DELETE FROM {simplenews_statistics_opens} WHERE nid NOT IN (SELECT nid FROM {node})';
+  db_query($query);
+}

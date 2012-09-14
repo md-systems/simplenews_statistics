@@ -69,6 +69,15 @@ function simplenews_statistics_help($path, $arg) {
 }
 
 /**
+ * Implements hook_node_delete(). 
+ */
+function simplenews_statistics_node_delete($node) {
+  db_delete('simplenews_statistics')->condition('nid', $node->nid);
+  db_delete('simplenews_statistics_clicks')->condition('nid', $node->nid);
+  db_delete('simplenews_statistics_opens')->condition('nid', $node->nid);
+}
+
+/**
  * Gathers the opens.
  */
 function simplenews_statistics_open() {
