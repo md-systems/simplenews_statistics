@@ -72,10 +72,16 @@ class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
       'receipt' => TRUE,
     );
     $this->drupalPost(NULL, $edit_category, t('Save'));
+    
+    $body_text = <<<TEXT
+Mail token: <strong>[simplenews-subscriber:mail]</strong><br />
+add a link in the mail to drupal.org so we can test later <br />
+<a title="Simplenews Statistics Link" href="http://drupal.org/project/simplenews_statistics ">Simplenews Statistics Module Page</a>
+TEXT;
 
     $edit = array(
       'title' => $this->randomName(),
-      'body[und][0][value]' => "Mail token: <strong>[simplenews-subscriber:mail]</strong>",
+      'body[und][0][value]' => $body_text,
     );
     $this->drupalPost('node/add/simplenews', $edit, ('Save'));
     $this->assertTrue(preg_match('|node/(\d+)$|', $this->getUrl(), $matches), 'Node created');
@@ -110,68 +116,269 @@ class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
   }
   
   /**
-   * Test Newsletter Substitution Logic: Open Image Counter
-   * 
-   * simulate testSendPublishNoCron for almost all cases
-   * send a newsletter, test that the image counter is properly added to the message
-   */
-  function testOpenCounterImageInserted(){
-    $this->createAndSendNewsletter();
-
-    // Get the last mail that has been sent.
-    $email = array_shift($this->drupalGetMails());
-    
-    //evaluate that the image counter has been added
-    drupal_set_message('<pre>' . print_r($email, 1) . '</pre>');
-    
-    return false;
-  }
-  
-  /**
-   * Test Newsletter Substitution Logic: Link Replace
-   * 
-   * send a newsletter, test that the link is properly formatted for click statistics
-   */
-  function testClickStatisticLinkReplaceInserted(){
-    return false;
-  }
-  
-  /**
    * Test Statistic Logic: Open Rate
    * 
    * test that calling the URL /simplenews/statistics/view for the node
    * properly updates the statistics
    */
   function testCallOpenStatisticURLDirectlyAndCheckDatabaseOpenRateUpdate(){
-    return false;
+    $this->createAndSendNewsletter();
+    
+    //get the last email sent
+    $mails = $this->drupalGetMails();
+    $mail = end($mails);
+    $source = $mail['params']['simplenews_source'];
+    $source_node = $source->getNode();
+    
+    //obtain the full URL link by stripping off the characters
+    $link = $mail['body'];
+    $link = substr($link, strpos($link, check_plain(url('simplenews/statistics/view', array('absolute' => TRUE, )))));
+    $link = substr($link, 0, strpos($link, '"'));
+    
+    $this->verbose('Link thus far is: ' . $link);
+    
+    //Before "viewing", verify the tables are properly initialized
+    {
+      //the simplenews_statistics_opens table should have no entry.
+      $query = db_select('simplenews_statistics_opens', 'ssc');
+      $query->addExpression('COUNT(*)', 'ct');
+      $query->condition('nid', $source_node->nid);
+      $query->condition('email', $mail['to']);
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchField()){
+          $this->assertEqual(0, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result)));
+        }
+      }
+      
+      //Query that 0 views is recorded in simplenews_statistics; expected total opens = 0 and unique opens = 0
+      $query = db_select('simplenews_statistics', 'ssc');
+      $query->fields('ssc', array('total_opens', 'unique_opens'));
+      $query->condition('nid', $source_node->nid);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchObject()){
+          $this->assertEqual(0, $result->total_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens', '@field' => 'total_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result->total_opens)));
+          $this->assertEqual(0, $result->unique_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens', '@field' => 'unique_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result->unique_opens)));
+          $found = TRUE;
+        }
+      }
+      
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics')));
+      }
+    }
+
+    //load the image
+    $this->drupalGet($link);
+    
+    {
+      //the simplenews_statistics_opens table should have 1 entry.
+      $query = db_select('simplenews_statistics_opens', 'ssc');
+      $query->addExpression('COUNT(*)', 'ct');
+      $query->condition('nid', $source_node->nid);
+      $query->condition('email', $mail['to']);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchField()){
+          $this->assertEqual(1, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result)));
+          $found = TRUE;
+        }
+      }
+      
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens')));
+      }
+      
+      //Query that 1 views is recorded in simplenews_statistics; expected total opens = 1 and unique opens = 1
+      $query = db_select('simplenews_statistics', 'ssc');
+      $query->fields('ssc', array('total_opens', 'unique_opens'));
+      $query->condition('nid', $source_node->nid);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchObject()){
+          $this->assertEqual(1, $result->total_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens', '@field' => 'total_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result->total_opens)));
+          $this->assertEqual(1, $result->unique_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens', '@field' => 'unique_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result->unique_opens)));
+          $found = TRUE;
+        }
+      }
+      
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics')));
+      }
+    }
+
+    //load the image a second time
+    $this->drupalGet($link);
+    
+    {
+      //the simplenews_statistics_opens table should have 2 entries.
+      $query = db_select('simplenews_statistics_opens', 'ssc');
+      $query->addExpression('COUNT(*)', 'ct');
+      $query->condition('nid', $source_node->nid);
+      $query->condition('email', $mail['to']);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchField()){
+          $this->assertEqual(2, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 2, '@received' => $result)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens')));
+      }
+    
+      //Query that 1 views is recorded in simplenews_statistics; expected total opens = 2 and unique opens = 1
+      $query = db_select('simplenews_statistics', 'ssc');
+      $query->fields('ssc', array('total_opens', 'unique_opens'));
+      $query->condition('nid', $source_node->nid);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchObject()){
+          $this->assertEqual(2, $result->total_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens', '@field' => 'total_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 2, '@received' => $result->total_opens)));
+          $this->assertEqual(1, $result->unique_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_opens', '@field' => 'unique_opens')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result->unique_opens)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics')));
+      }
+    }
   }
   
   /**
    * Test Statistic Logic: Click Rate
    * 
    * test that calling the URL /simplenews/statistics/click for the node
-   * properly updates the statistics
+   * properly updates the statistics. Modeled after the Opens test (previous test).
+   * 
+   * @see testCallOpenStatisticURLDirectlyAndCheckDatabaseOpenRateUpdate
    */
   function testCallClickStatisticURLDirectlyAndCheckDatabaseClickRateUpdate(){
-    return false;
-  }
-  
-  /**
-   * Test Workflow: Statistic Open Rate Updated 
-   * 
-   * send a newsletter, open it, test that the open statistics is properly updated
-   */
-  function testOpenStatisticUpdate(){
-    return false;
-  }
-  
-  /**
-   * Test Workflow: Statistic Click Rate Updated 
-   * 
-   * send a newsletter, open it, click a link, test that the click statistics is properly updated
-   */
-  function testClickStatisticUpdate(){
-    return false;
+    $this->createAndSendNewsletter();
+    
+    //get the last email sent
+    $mails = $this->drupalGetMails();
+    $mail = end($mails);
+    $source = $mail['params']['simplenews_source'];
+    $source_node = $source->getNode();
+    
+    //obtain the full URL link by stripping off the characters
+    $link = $mail['body'];
+    $link = substr($link, strpos($link, check_plain(url('simplenews/statistics/click', array('absolute' => TRUE, ))))); //we only obtain the first of probobly several urls
+    $link = substr($link, 0, strpos($link, '"'));
+    
+    $this->verbose('Link thus far is: ' . $link);
+    
+    //Before "clicking", verify the tables are properly initialized
+    {
+      //the simplenews_statistics_opens table should have no entry.
+      $query = db_select('simplenews_statistics_clicks', 'ssc');
+      $query->addExpression('COUNT(*)', 'ct');
+      $query->condition('nid', $source_node->nid);
+      $query->condition('email', $mail['to']);
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchField()){
+          $this->assertEqual(0, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result)));
+        }
+      }
+    
+      //Query that 0 views is recorded in simplenews_statistics; expected total opens = 0 and unique opens = 0
+      $query = db_select('simplenews_statistics', 'ssc');
+      $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
+      $query->condition('nid', $source_node->nid);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchObject()){
+          $this->assertEqual(0, $result->total_clicks, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks', '@field' => 'total_clicks')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result->total_clicks)));
+          $this->assertEqual(0, $result->user_unique_click_through, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks', '@field' => 'user_unique_click_through')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result->user_unique_click_through)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics')));
+      }
+    }
+    
+    //load the image
+    $this->drupalGet($link);
+    
+    {
+      //the simplenews_statistics_clicks table should have 1 entry.
+      $query = db_select('simplenews_statistics_clicks', 'ssc');
+      $query->addExpression('COUNT(*)', 'ct');
+      $query->condition('nid', $source_node->nid);
+      $query->condition('email', $mail['to']);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchField()){
+          $this->assertEqual(1, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks')));
+      }
+    
+      //Query that 1 views is recorded in simplenews_statistics; expected total opens = 1 and unique opens = 1
+      $query = db_select('simplenews_statistics', 'ssc');
+      $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
+      $query->condition('nid', $source_node->nid);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchObject()){
+          $this->assertEqual(1, $result->total_clicks, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks', '@field' => 'total_clicks')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result->total_clicks)));
+          $this->assertEqual(1, $result->user_unique_click_through, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks', '@field' => 'user_unique_click_through')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result->user_unique_click_through)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics')));
+      }
+    }
+    
+    //load the image a second time
+    $this->drupalGet($link);
+    
+    {
+      //the simplenews_statistics_clicks table should have 2 entries.
+      $query = db_select('simplenews_statistics_clicks', 'ssc');
+      $query->addExpression('COUNT(*)', 'ct');
+      $query->condition('nid', $source_node->nid);
+      $query->condition('email', $mail['to']);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchField()){
+          $this->assertEqual(2, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks')) . ' ' . t('Expected @expected, received @received', array('@expected' => 2, '@received' => $result)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks')));
+      }
+    
+      //Query that 1 views is recorded in simplenews_statistics; expected total opens = 2 and unique opens = 1
+      $query = db_select('simplenews_statistics', 'ssc');
+      $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
+      $query->condition('nid', $source_node->nid);
+      $found = FALSE;
+      if($resultset = $query->execute()){
+        if($result = $resultset->fetchObject()){
+          $this->assertEqual(2, $result->total_clicks, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks', '@field' => 'total_clicks')) . ' ' . t('Expected @expected, received @received', array('@expected' => 2, '@received' => $result->total_clicks)));
+          $this->assertEqual(1, $result->user_unique_click_through, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_clicks', '@field' => 'user_unique_click_through')) . ' ' . t('Expected @expected, received @received', array('@expected' => 1, '@received' => $result->user_unique_click_through)));
+          $found = TRUE;
+        }
+      }
+    
+      if (!$found) {
+        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics')));
+      }
+    }
   }
   
   /**
@@ -180,7 +387,30 @@ class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
    * send a newsletter, click a link, test that the user is forwarded to the correct page
    */
   function testClickStatisticLinkRedirect(){
-    return false;
+    $this->createAndSendNewsletter();
+    
+    //get the last email sent
+    $mails = $this->drupalGetMails();
+    $mail = end($mails);
+    $source = $mail['params']['simplenews_source'];
+    $source_node = $source->getNode();
+    
+    //obtain the full URL link by stripping off the characters
+    $link = $mail['body'];
+    $link = substr($link, strpos($link, 'title="Simplenews Statistics Link" href="')); //make certain we get the link that we need to test
+    $link = substr($link, strpos($link, check_plain(url('simplenews/statistics/click', array('absolute' => TRUE, ))))); //we only obtain the first of probobly several urls
+    $link = substr($link, 0, strpos($link, '"'));
+    
+    $this->verbose('Link thus far is: ' . $link);
+    
+    $intended_url = "http://drupal.org/project/simplenews_statistics"; //defined in the test mail we send above
+    
+    //click the link - see if we are re-directed to the target page
+    $this->drupalGet($link);
+    
+    //test
+    $this->assertEqual($intended_url, $this->getUrl());
+    
   }
   
   /**
@@ -188,35 +418,39 @@ class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
    * 
    * send a newsletter, click a link, test that the user is forwarded to the correct page
    */
-  function testUnpublishedNewsletterOpenStatistic(){
+  /* function testUnpublishedNewsletterOpenStatistic(){
+    $this->assertEqual(TRUE, FALSE, 'Test not written.');
     return false;
-  }
+  } */
   
   /**
    * Test Workflow: Click Rate for unpublished Newsletter is not updated
    * 
    * send a newsletter, click a link, test that the user is forwarded to the correct page
    */
-  function testUnpublishedNewsletterClickStatistic(){
+  /* function testUnpublishedNewsletterClickStatistic(){
+    $this->assertEqual(TRUE, FALSE, 'Test not written.');
     return false;
-  }
+  }*/
   
   /**
    * Test Workflow: Open Rate for non-Newsletter entity is not counted
    * 
    * test that if the URL is called with an improper node id, that it is not updated
    */
-  function testNonNewsletterOpenStatistic(){
+  /* function testNonNewsletterOpenStatistic(){
+    $this->assertEqual(TRUE, FALSE, 'Test not written.');
     return false;
-  }
+  }*/
   
   /**
    * Test Workflow: Open Rate for non-Newsletter entity is not counted
    * 
    * test that if the URL is called with an improper node id, that it is not updated
    */
-  function testNonNewsletterClickStatistic(){
+  /* function testNonNewsletterClickStatistic(){
+    $this->assertEqual(TRUE, FALSE, 'Test not written.');
     return false;
-  }
+  }*/
   
 }
