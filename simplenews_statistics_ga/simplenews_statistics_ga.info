@@ -1,0 +1,7 @@
+name = "Simplenews Statistics Google Analytics"
+description = "Integrates Google Anaytics with Simplenews Statistics."
+dependencies[] = simplenews_statistics
+dependencies[] = googleanalytics
+configure = admin/config/services/simplenews/statistics/ga
+package = Statistics
+core = 7.x

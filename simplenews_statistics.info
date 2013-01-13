@@ -4,5 +4,5 @@ files[] = tests/simplenews_statistics.test
 dependencies[] = simplenews
 dependencies[] = views
 configure = admin/config/services/simplenews/statistics
-package = Mail
+package = Statistics
 core = 7.x

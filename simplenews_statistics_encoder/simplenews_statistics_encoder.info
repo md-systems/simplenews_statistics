@@ -1,0 +1,6 @@
+name = "Simplenews Statistics Encoder"
+description = "Encodes en decodes the parameters for Simplenews Statistics Url's."
+dependencies[] = simplenews_statistics
+configure = admin/config/services/simplenews/statistics/encoder
+package = Statistics
+core = 7.x

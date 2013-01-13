@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * @file
+ * Main simplenews statistics encoder file.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function simplenews_statistics_enoder_menu() {
+  $items['admin/config/services/simplenews/statistics/encoder'] = array(
+    'title' => 'Parameter encoding',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simplenews_statistics_encoder_admin_settings_form'),
+    'access arguments' => array('administer paramater encoding for newsletter statistics'),
+    'file' => 'simplenews_statistics_encoder.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function simplenews_statistics_encoder_permission() {
+  $perms = array(
+    'administer paramater encoding for newsletter statistics' => array(
+      'title' => t('administer paramater encoding for newsletter statistics'),
+      'description' => t('Allows to administer parameter encoding settings for newsletter statistics. Give to only trusted roles.'),
+    ),
+  );
+  return $perms;
+}
+
+/**
+ * Implements hook_simplenews_statistics_decode_snid().
+ */
+function simplenews_statistics_encoder_simplenews_statistics_decode_snid($snid) {
+  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
+  return simplenews_statistics_encoder_decode($snid);
+}
+
+/**
+ * Implements hook_simplenews_statistics_decode_urlid().
+ */
+function simplenews_statistics_encoder_simplenews_statistics_decode_urlid($urlid) {
+  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
+  return simplenews_statistics_encoder_decode($urlid);
+}
+
+/**
+ * Implements hook_simplenews_statistics_encode_snid().
+ */
+function simplenews_statistics_encoder_simplenews_statistics_encode_snid($snid) {
+  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
+  return simplenews_statistics_encoder_encode($snid);
+}
+
+/**
+ * Implements hook_simplenews_statistics_encode_urlid().
+ */
+function simplenews_statistics_encoder_simplenews_statistics_encode_urlid($urlid) {
+  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
+  return simplenews_statistics_encoder_encode($urlid);
+}

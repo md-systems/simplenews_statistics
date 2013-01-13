@@ -7,59 +7,17 @@
 
 /**
  * Implements hook_schema().
+ * 
+ * @todo: add some sensible indexes
  */
 function simplenews_statistics_schema() {
-  $schema['simplenews_statistics'] = array(
-    'description' => 'Statistics',
-    'fields' => array(
-      'nid' => array(
-        'description' => 'Node ID.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'send' => array(
-        'description' => 'Send emails for this newsletter',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'total_clicks' => array(
-        'description' => 'Total clicks for this newsletter',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'total_opens' => array(
-        'description' => 'Total opens for this newsletter',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'unique_opens' => array(
-        'description' => 'Emailaddress-unique opens for this newsletter',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'user_unique_click_through' => array(
-        'description' => 'Number of users who have clicked at least one link in the newsletter',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
-    'primary key' => array('nid'),
-  );
-
   $schema['simplenews_statistics_clicks'] = array(
     'description' => 'Newsletter Clicks',
     'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
       'email' => array(
         'description' => 'Primary key: Email.',
         'type' => 'varchar',
@@ -73,12 +31,11 @@ function simplenews_statistics_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'url' => array(
-        'description' => 'The clicked URL.',
-        'type' => 'varchar',
+      'urlid' => array(
+        'description' => 'Reference to the clicked URL.',
+        'type' => 'int',
         'not null' => TRUE,
-        'length' => 255,
-        'default' => '',
+        'default' => 0,
       ),
       'timestamp' => array(
         'description' => 'The time of the click',
@@ -88,16 +45,16 @@ function simplenews_statistics_schema() {
         'default' => 0,
       ),
     ),
-    'primary key' => array('email', 'nid', 'timestamp', 'url'),
-    'indexes' => array(
-      'nid' => array('nid'),
-      'nid_click_url' => array('nid', 'url'),
-    ),
+    'primary key' => array('cid'),
   );
 
   $schema['simplenews_statistics_opens'] = array(
     'description' => 'Newsletter Opens',
     'fields' => array(
+      'oid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
       'email' => array(
         'description' => 'Primary key: Email.',
         'type' => 'varchar',
@@ -119,12 +76,30 @@ function simplenews_statistics_schema() {
         'default' => 0,
       ),
     ),
-    'primary key' => array('email', 'nid', 'timestamp'),
-    'indexes' => array(
-      'email' => array('email'),
-      'nid' => array('nid'),
-    ),
+    'primary key' => array('oid'),
   );
+  
+  $schema['simplenews_statistics_urls'] = array(
+    'description' => 'All urls for all newslettters',
+    'fields' => array(
+      'urlid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'Node ID.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'url' => array(
+        'type' => 'text',
+        'size' => 'normal',
+      ),
+    ),
+    'primary key' => array('urlid'),
+  );
+  
   return $schema;
 }
 
@@ -132,6 +107,7 @@ function simplenews_statistics_schema() {
  * Implements hook_install().
  */
 function simplenews_statistics_install() {
+  
 }
 
 /**
@@ -148,32 +124,4 @@ function simplenews_statistics_uninstall() {
  */
 function simplenews_statistics_update_7000() {
   //@todo
-}
-
-/**
- * #7001: add proper table indexes to simplenews_statistics_clicks and simplenews_statistics_opens tables
- */
-function simplenews_statistics_update_7001() {
-  //add missing indexes
-  db_add_primary_key('simplenews_statistics_clicks', array('email', 'nid', 'timestamp', 'url'));
-  db_add_index('simplenews_statistics_clicks', 'nid', array('nid'));
-  db_add_index('simplenews_statistics_clicks', 'nid_click_url', array('nid', 'url'));
-
-  db_add_primary_key('simplenews_statistics_opens', array('email', 'nid', 'timestamp'));
-  db_add_index('simplenews_statistics_opens', 'email', array('email'));
-  db_add_index('simplenews_statistics_opens', 'nid', array('nid'));
-}
-
-/**
- * Clear all statitics for deleted nodes
- */
-function simplenews_statistics_update_7002() {
-  // Remove all statistics for nodes that don't exist anymore
-  // do not use db_delete here as we are using the subquery. Keep the MySQL efficient.
-  $query = 'DELETE FROM {simplenews_statistics} WHERE nid NOT IN (SELECT nid FROM {node})';
-  db_query($query);
-  $query = 'DELETE FROM {simplenews_statistics_clicks} WHERE nid NOT IN (SELECT nid FROM {node})';
-  db_query($query);
-  $query = 'DELETE FROM {simplenews_statistics_opens} WHERE nid NOT IN (SELECT nid FROM {node})';
-  db_query($query);
 }
