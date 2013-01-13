@@ -175,9 +175,6 @@ function simplenews_statistics_click($snid, $urlid) {
         }
       }
 
-watchdog('simplenews_statistics', 'path before: <pre>'.print_r($path, TRUE).'</pre>');
-watchdog('simplenews_statistics', 'options before: <pre>'.print_r($options, TRUE).'</pre>');
-
       // Call possible rewriters for the url
       $hook = 'simplenews_statistics_rewrite_goto_url';
       foreach (module_implements($hook) as $module) {
@@ -188,11 +185,6 @@ watchdog('simplenews_statistics', 'options before: <pre>'.print_r($options, TRUE
       }
       
       // Fragment behaviour can get out of spec
-
-watchdog('simplenews_statistics', 'path after: <pre>'.print_r($path, TRUE).'</pre>');
-watchdog('simplenews_statistics', 'options after: <pre>'.print_r($options, TRUE).'</pre>');
-
-url();
       drupal_goto($path, $options);
     }
   }

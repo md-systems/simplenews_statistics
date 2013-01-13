@@ -8,7 +8,7 @@
 /**
  * Implements hook_menu().
  */
-function simplenews_statistics_enoder_menu() {
+function simplenews_statistics_encoder_menu() {
   $items['admin/config/services/simplenews/statistics/encoder'] = array(
     'title' => 'Parameter encoding',
     'type' => MENU_LOCAL_TASK,
