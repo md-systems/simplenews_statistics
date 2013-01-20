@@ -83,6 +83,8 @@ function simplenews_statistics_node_delete($node) {
  */
 function simplenews_statistics_open($snid) {
   // Call possible decoders for the snid in modules implementing the hook
+  // Modules implementing this hook should validate this input themself because
+  // we can not know what kind of string they will generate.
   $hook = 'simplenews_statistics_decode_snid';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
@@ -91,6 +93,12 @@ function simplenews_statistics_open($snid) {
     }
   }
 
+  // Once decoded properly we can know for sure that the $snid is an integer.
+  if (!is_int($snid)) {
+    watchdog('simmplenews_statistics', 'Simplenews statistics open called with illegal parameter.');
+    return FALSE;
+  }
+  
   $subscriber = simplenews_subscriber_load($snid);
   if (!empty($subscriber) && !empty($subscriber[$snid])) {
     $record = new stdClass();
@@ -112,12 +120,21 @@ function simplenews_statistics_open($snid) {
  */
 function simplenews_statistics_click($snid, $urlid) {
   // Call possible decoders for the snid in modules implementing the hook
+  // Modules implementing this hook should validate all input themself because
+  // we can not know what kind of strings they will generate.
   $hook = 'simplenews_statistics_decode_snid';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
       $snid = $function($snid);
     }
+  }
+
+  // Once decoded properly we can know for sure that the $snid and $urlid are
+  // integers.
+  if (!is_int($snid) || !is_int($urlid)) {
+    watchdog('simmplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
+    return FALSE;
   }
   
   // Call possible decoders for the urlid in modules implementing the hook
