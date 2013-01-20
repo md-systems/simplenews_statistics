@@ -94,21 +94,27 @@ function simplenews_statistics_open($snid) {
 
   // Once decoded properly we can know for sure that the $snid is an integer.
   if (!is_int($snid)) {
-    watchdog('simmplenews_statistics', 'Simplenews statistics open called with illegal parameter.');
-    return FALSE;
+    watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter.');
   }
-  
-  $subscriber = simplenews_subscriber_load($snid);
-  if (!empty($subscriber) && !empty($subscriber[$snid])) {
-    $record = new stdClass();
-    $record->email = $subscriber[$snid]->mail;
-    $record->nid = $subscriber[$snid]->nid;
-    $record->timestamp = time();
-    drupal_write_record('simplenews_statistics_opens', $record);
+  else {
+    $subscriber = simplenews_subscriber_load($snid);
+    if (!empty($subscriber) && !empty($subscriber[$snid])) {
+      $record = new stdClass();
+      $record->email = $subscriber[$snid]->mail;
+      $record->nid = $subscriber[$snid]->nid;
+      $record->timestamp = time();
+      drupal_write_record('simplenews_statistics_opens', $record);
+    }
   }
-  
-  // @todo: actually return an image here
-  // @see: http://drupal.org/node/1857010
+
+  // Render a transparent image.
+  // @todo: set some more headers like cache ...
+  $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
+  $type = 'image/png';
+  header('Content-Type: '.$type);
+  header('Content-Length: ' . filesize($file));
+  readfile($file);
+  drupal_exit();
 }
 
 /**
@@ -132,7 +138,7 @@ function simplenews_statistics_click($snid, $urlid) {
   // Once decoded properly we can know for sure that the $snid and $urlid are
   // integers.
   if (!is_int($snid) || !is_int($urlid)) {
-    watchdog('simmplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
+    watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
     return FALSE;
   }
   
@@ -263,7 +269,7 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
         $snid = $function($snid);
       }
     }
-    $body .= '<img src="' . url('sns/open/' . $snid,  array('absolute' => TRUE)) . '" width="1" height="1" />';
+    $body .= '<img src="' . url('sns/open/' . $snid,  array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
   }
 }
 
