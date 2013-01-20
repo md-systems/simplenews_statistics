@@ -38,7 +38,9 @@ function simplenews_statistics_encoder_permission() {
  */
 function simplenews_statistics_encoder_simplenews_statistics_decode_snid($snid) {
   require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  return simplenews_statistics_encoder_decode($snid);
+  $decoded = simplenews_statistics_encoder_decode($snid);
+  $salt = variable_get('simplenews_statistics_encoder_salt', 0);
+  return $decoded - $salt;
 }
 
 /**
@@ -46,7 +48,9 @@ function simplenews_statistics_encoder_simplenews_statistics_decode_snid($snid) 
  */
 function simplenews_statistics_encoder_simplenews_statistics_decode_urlid($urlid) {
   require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  return simplenews_statistics_encoder_decode($urlid);
+  $decoded = simplenews_statistics_encoder_decode($urlid);
+  $salt = variable_get('simplenews_statistics_encoder_salt', 0);
+  return $decoded - $salt;
 }
 
 /**
@@ -54,7 +58,9 @@ function simplenews_statistics_encoder_simplenews_statistics_decode_urlid($urlid
  */
 function simplenews_statistics_encoder_simplenews_statistics_encode_snid($snid) {
   require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  return simplenews_statistics_encoder_encode($snid);
+  $salt = variable_get('simplenews_statistics_encoder_salt', 0);
+  $salted = $snid + $salt;
+  return simplenews_statistics_encoder_encode($salted);
 }
 
 /**
@@ -62,5 +68,7 @@ function simplenews_statistics_encoder_simplenews_statistics_encode_snid($snid) 
  */
 function simplenews_statistics_encoder_simplenews_statistics_encode_urlid($urlid) {
   require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  return simplenews_statistics_encoder_encode($urlid);
+  $salt = variable_get('simplenews_statistics_encoder_salt', 0);
+  $salted = $urlid + $salt;
+  return simplenews_statistics_encoder_encode($salted);
 }
