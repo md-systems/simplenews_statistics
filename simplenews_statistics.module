@@ -6,7 +6,6 @@
  */
 
 // @todo: find a way to use simplenews'es message caching (token replacement)
-// @todo: add logic to open and click to validate all user input
 
 /**
  * Implements hook_menu().
