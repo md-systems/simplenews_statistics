@@ -59,7 +59,7 @@ function simplenews_statistics_encoder_encode($input) {
   
   $mapping = simplenews_statistics_encoder_base_encode_mapping();
   $var = simplenews_statistics_encoder_base_encode($input, sizeof($mapping));
-  $arr = split('-', $var);
+  $arr = explode('-', $var);
   
   if (empty($arr)) { return $mapping[0]; }
   if (!is_array($arr)) { $arr = array($arr); }
