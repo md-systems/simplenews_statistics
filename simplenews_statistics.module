@@ -154,7 +154,7 @@ function simplenews_statistics_click($snid, $urlid) {
 
   // Track click if there is an url and a valid subscriber. For test mails the
   // snid will be 0, so no valid subscriber will be loaded and the click won't
-  // be counted. But the clicked link should still redirect properly.
+  // be counted. But the clicked link will still redirect properly.
   $query = db_select('simplenews_statistics_urls', 'ssu');
   $query->fields('ssu', array('url', 'nid'));
   $query->condition('urlid', $urlid);
@@ -167,6 +167,15 @@ function simplenews_statistics_click($snid, $urlid) {
     $record->urlid = $urlid;
     $record->timestamp = time();
     drupal_write_record('simplenews_statistics_clicks', $record);
+    
+    // Check if the open action was registered for this subscriber. If not we
+    // can track the open here to improve statistics accuracy.
+    $query = db_select('simplenews_statistics_opens', 'sso');
+    $query->condition('email', $subscriber->mail);
+    $num_rows = $query->countQuery()->execute()->fetchField();
+    if ($num_rows == 0) {
+      simplenews_statistics_open($subscriber->snid);
+    }
   }
 
   // Redirect to the right URL.
