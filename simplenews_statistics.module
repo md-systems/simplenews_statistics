@@ -136,13 +136,13 @@ function simplenews_statistics_click($snid, $urlid) {
   }
 
   // Once decoded properly we can know for sure that the $snid and $urlid are
-  // integers.
-  if (!is_int($snid) || !is_int($urlid)) {
+  // integers. Fallback on any error is to go to the homepage.
+  if (!is_numeric($snid) || !is_numeric($urlid)) {
     watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
-    return FALSE;
+    drupal_goto();
   }
-  
-  // Call possible decoders for the urlid in modules implementing the hook
+
+  // Call possible decoders for the urlid in modules implementing the hook.
   $hook = 'simplenews_statistics_decode_urlid';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
@@ -151,90 +151,98 @@ function simplenews_statistics_click($snid, $urlid) {
     }
   }
 
+  // Track click if there is an url and a valid subscriber. For test mails the
+  // snid will be 0, so no valid subscriber will be loaded and the click won't
+  // be counted. But the clicked link should still redirect properly.
+  $query = db_select('simplenews_statistics_urls', 'ssu');
+  $query->fields('ssu', array('url', 'nid'));
+  $query->condition('urlid', $urlid);
+  $url_record = $query->execute()->fetchAssoc();
   $subscriber = simplenews_subscriber_load($snid);
-  if (!empty($subscriber) && $subscriber->snid == $snid) {
-    $query = db_select('simplenews_statistics_urls', 'ssu');
-    $query->fields('ssu', array('url', 'nid'));
-    $query->condition('urlid', $urlid);
-    $url_record = $query->execute()->fetchAssoc();
-    if (!empty($url_record) && !empty($url_record['url'])) {
-      $record = new stdClass();
-      $record->email = $subscriber->mail;
-      $record->nid = $url_record['nid'];
-      $record->urlid = $urlid;
-      $record->timestamp = time();
-      drupal_write_record('simplenews_statistics_clicks', $record);
-
-      // Split the URL into it's parts for easier handling
-      $path = $url_record['url'];
-      $options = array(
-        'fragment' => '',
-        'query' => array(),
-      );
-
-      // The fragment should always be after the query, so we get that first.
-      // We format it for the options array for drupal_goto().
-      $fragment_position = strpos($path, '#');
-      if (FALSE !== $fragment_position) {
-        $fragment = substr($path, $fragment_position + 1);
-        $path = str_replace('#' . $fragment, '', $path);
-        $options['fragment'] = $fragment;
-      }
-      // Determine the position of the query string, get it, delete it from the
-      // original path and then we explode the parts and the key-value pairs to
-      // get a clean output that we can use in drupal_goto().
-      $query_position = strpos($path, '?');
-      if (FALSE !== $query_position) {
-        $query = substr($path, $query_position + 1);
-        $path = str_replace('?' . $query, '', $path);
-        $element = explode('&', $query);
-        foreach ($element as $pair) {
-          $pair = explode('=', $pair);
-          if (!isset($pair[1])) {
-            $pair[1] = '';
-          }
-          $options['query'][$pair[0]] = $pair[1];
-        }
-      }
-
-      // Call possible rewriters for the url
-      $hook = 'simplenews_statistics_rewrite_goto_url';
-      foreach (module_implements($hook) as $module) {
-        $function = $module . '_' . $hook;
-        if (function_exists($function)) {
-          $function($path, $options, $snid, $url_record['nid']);
-        }
-      }
-      
-      // Fragment behaviour can get out of spec
-      drupal_goto($path, $options);
-    }
+  if ($url_record && $subscriber && $subscriber->snid == $snid) {
+    $record = new stdClass();
+    $record->email = $subscriber->mail;
+    $record->nid = $url_record['nid'];
+    $record->urlid = $urlid;
+    $record->timestamp = time();
+    drupal_write_record('simplenews_statistics_clicks', $record);
   }
 
-  // Fallback on any error is to go to the homepage
+  // Redirect to the right URL.
+  if (!empty($url_record) && !empty($url_record['url'])) {
+    // Split the URL into it's parts for easier handling.
+    $path = $url_record['url'];
+    $options = array(
+      'fragment' => '',
+      'query' => array(),
+    );
+
+    // The fragment should always be after the query, so we get that first.
+    // We format it for the options array for drupal_goto().
+    $fragment_position = strpos($path, '#');
+    if (FALSE !== $fragment_position) {
+      $fragment = substr($path, $fragment_position + 1);
+      $path = str_replace('#' . $fragment, '', $path);
+      $options['fragment'] = $fragment;
+    }
+    // Determine the position of the query string, get it, delete it from the
+    // original path and then we explode the parts and the key-value pairs to
+    // get a clean output that we can use in drupal_goto().
+    $query_position = strpos($path, '?');
+    if (FALSE !== $query_position) {
+      $query = substr($path, $query_position + 1);
+      $path = str_replace('?' . $query, '', $path);
+      $element = explode('&', $query);
+      foreach ($element as $pair) {
+        $pair = explode('=', $pair);
+        if (!isset($pair[1])) {
+          $pair[1] = '';
+        }
+        $options['query'][$pair[0]] = $pair[1];
+      }
+    }
+
+    // Call possible rewriters for the url.
+    $hook = 'simplenews_statistics_rewrite_goto_url';
+    foreach (module_implements($hook) as $module) {
+      $function = $module . '_' . $hook;
+      if (function_exists($function)) {
+        $function($path, $options, $snid, $url_record['nid']);
+      }
+    }
+    // Fragment behaviour can get out of spec here.
+    drupal_goto($path, $options);
+  }
+
+  // Fallback on any error is to go to the homepage.
   drupal_goto();
 }
 
 /**
  * Implements hook_mail_alter().
  *
- * Adds a hidden image to the body and counts the amount of emails send.
+ * Parses all the links in the email so they can be tracked. Also adds a hidden
+ * image to the body to track opens.
  */
 function simplenews_statistics_mail_alter(&$message) {
   if (($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test')) {
     $node = $message['params']['simplenews_source']->getNode();
     $subscriber = $message['params']['simplenews_source']->getSubscriber();
 
+    // During testing the snid might be unset. Use 0 in that case. This will
+    // make sure that the link will still work but won't be counted.
+    $snid = isset($subscriber->snid) ? $subscriber->snid : 0;
+
     // Parse body.
-    _simplenews_statistics_parse_links($message['body'], $node->nid, $subscriber->snid);
+    _simplenews_statistics_parse_links($message['body'], $node->nid, $snid);
 
     // Add view image.
-    _simplenews_statistics_image_tag($message['body'], $node->nid, $subscriber->snid);
+    _simplenews_statistics_image_tag($message['body'], $node->nid, $snid);
   }
 }
 
 /**
- * Parse links in the body.
+ * Helper function to parse links in the body.
  */
 function _simplenews_statistics_parse_links(&$body, $nid, $snid) {
   if (is_array($body)) {
@@ -243,7 +251,6 @@ function _simplenews_statistics_parse_links(&$body, $nid, $snid) {
     }
   }
   else {
-    // Replace links.
     // @todo: try and write some cleaner code here
     $pattern = '/(<a[^>]+href=")([^"]*)/emi';
     $body = preg_replace($pattern, '"\\1"._simplenews_statistics_replace_url("\2", $nid, $snid)', $body);
@@ -277,7 +284,7 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
  * Alter link to go through statistics.
  */
 function _simplenews_statistics_replace_url($url, $nid, $snid) {
-  // Do not replace anchor-links
+  // Do not replace anchor-links.
   if (substr($url, 0, 1) == '#')
     return $url;
 
@@ -289,7 +296,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  // Check if the URL already exists, if not create it
+  // Check if the URL already exists, if not create it.
   // @todo: Add some caching mechanism to drastically reduce database load.
   $query = db_select('simplenews_statistics_urls', 'ssu');
   $query->fields('ssu', array('urlid'));
@@ -306,7 +313,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     $urlid = $record->urlid;
   }
 
-  // Call possible encoders for the snid in modules implementing the hook
+  // Call possible encoders for the snid in modules implementing the hook.
   $hook = 'simplenews_statistics_encode_snid';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
@@ -315,7 +322,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  // Call possible encoders for the urlid in modules implementing the hook
+  // Call possible encoders for the urlid in modules implementing the hook.
   $hook = 'simplenews_statistics_encode_urlid';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
