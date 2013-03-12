@@ -120,9 +120,6 @@ function simplenews_statistics_open($snid) {
 
 /**
  * Check and log the clicks.
- * 
- * @todo: implement logic to track an open if this mails has not been opened.
- * @see: http://drupal.org/node/1310720
  */
 function simplenews_statistics_click($snid, $urlid) {
   // Call possible decoders for the snid in modules implementing the hook
@@ -155,16 +152,13 @@ function simplenews_statistics_click($snid, $urlid) {
   // Track click if there is an url and a valid subscriber. For test mails the
   // snid will be 0, so no valid subscriber will be loaded and the click won't
   // be counted. But the clicked link will still redirect properly.
-  $query = db_select('simplenews_statistics_urls', 'ssu');
-  $query->fields('ssu', array('url', 'nid'));
-  $query->condition('urlid', $urlid);
-  $url_record = $query->execute()->fetchAssoc();
+  $url_record = simplenews_statistics_get_url($url);
   $subscriber = simplenews_subscriber_load($snid);
   if ($url_record && $subscriber && $subscriber->snid == $snid) {
     $record = new stdClass();
     $record->email = $subscriber->mail;
-    $record->nid = $url_record['nid'];
-    $record->urlid = $urlid;
+    $record->nid = $url_record->nid;
+    $record->urlid = $url_record->urlid;
     $record->timestamp = time();
     drupal_write_record('simplenews_statistics_clicks', $record);
     
@@ -179,9 +173,9 @@ function simplenews_statistics_click($snid, $urlid) {
   }
 
   // Redirect to the right URL.
-  if (!empty($url_record) && !empty($url_record['url'])) {
+  if (!empty($url_record) && !empty($url_record->url)) {
     // Split the URL into it's parts for easier handling.
-    $path = $url_record['url'];
+    $path = $url_record->url;
     $options = array(
       'fragment' => '',
       'query' => array(),
@@ -217,7 +211,7 @@ function simplenews_statistics_click($snid, $urlid) {
     foreach (module_implements($hook) as $module) {
       $function = $module . '_' . $hook;
       if (function_exists($function)) {
-        $function($path, $options, $snid, $url_record['nid']);
+        $function($path, $options, $snid, $url_record->nid);
       }
     }
     // Fragment behaviour can get out of spec here.
@@ -291,6 +285,61 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
 }
 
 /**
+ * Gets an url record. The caching causes a slight performance hit on our main
+ * task: redirecting users. But whilst generating/sending mails it gives us a
+ * huge performance gain though!
+ * 
+ * @param $url
+ *    Complete url to search for.
+ * @param $reset
+ *    Reset cache for this URL.
+ * @return $url_record
+ *    Object representing the url record or FALSE.
+ */
+function simplenews_statistics_get_url($url, $reset = FALSE) {
+  // We don't use the magic __FUNCTION__ as parameter because we want to use the
+  // static cache outside the scope of this function as well. Mainly in the
+  // simplenews_statistics_set_url() function.
+  $cached_urls = &drupal_static('simplenews_statistics_urls');
+
+  if (!isset($cached_urls[$url]) || $reset) {
+    $query = db_select('simplenews_statistics_urls', 'ssu');
+    $query->fields('ssu', array('urlid'));
+    $query->condition('url', $url);
+    $record = $query->execute()->fetchObject();
+    if (FALSE !== $record) {
+      $cached_urls[$url] = $record;
+      return $record;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Creates an url record in the database.
+ * 
+ * @param $url
+ *    The URL.
+ * @param $nid
+ *    The Simplenews nid this link belongs to.
+ * @return $url_record
+ *    Object representing the url record or FALSE.
+ */
+function simplenews_statistics_set_url($url, $nid) {
+  $record = new stdClass();
+  $record->nid = $nid;
+  $record->url = $url;
+  $result = drupal_write_record('simplenews_statistics_urls', $record);
+  if (FALSE !== $result) {
+    // Immediately cache the record for later use.
+    $cached_urls = &drupal_static('simplenews_statistics_urls');
+    $cached_urls[$url] = $record;
+    return $record;
+  }
+  return FALSE;
+}
+
+/**
  * Alter link to go through statistics.
  */
 function _simplenews_statistics_replace_url($url, $nid, $snid) {
@@ -306,21 +355,11 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  // Check if the URL already exists, if not create it.
-  // @todo: Add some caching mechanism to drastically reduce database load.
-  $query = db_select('simplenews_statistics_urls', 'ssu');
-  $query->fields('ssu', array('urlid'));
-  $query->condition('url', $url);
-  $record = $query->execute()->fetchAssoc();
-  if (!empty($record) && !empty($record['urlid'])) {
-    $urlid = $record['urlid'];
-  }
-  else {
-    $record = new stdClass();
-    $record->nid = $nid;
-    $record->url = $url;
-    drupal_write_record('simplenews_statistics_urls', $record);
-    $urlid = $record->urlid;
+  // Get the url record from the database. Uses Drupal's static caching if
+  // available. Create a new record in database and cache if there isn't one.
+  $url_record = simplenews_statistics_get_url($url);
+  if (FALSE === $url_record) {
+    $url_record = simplenews_statistics_set_url($url, $nid);
   }
 
   // Call possible encoders for the snid in modules implementing the hook.
@@ -337,11 +376,11 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
-      $urlid = $function($urlid);
+      $url_record->urlid = $function($url_record->urlid);
     }
   }
 
-  return url('sns/click/' . $snid . '/' . $urlid,  array('absolute' => TRUE));
+  return url('sns/click/' . $snid . '/' . $url_record->urlid,  array('absolute' => TRUE));
 }
 
 /**
