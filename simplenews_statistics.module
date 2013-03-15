@@ -92,8 +92,8 @@ function simplenews_statistics_open($snid) {
     }
   }
 
-  // Once decoded properly we can know for sure that the $snid is an integer.
-  if (!is_int($snid)) {
+  // Once decoded properly we can know for sure that the $snid is numeric.
+  if (!is_numeric($snid)) {
     watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter.');
   }
   else {
@@ -134,7 +134,7 @@ function simplenews_statistics_click($snid, $urlid) {
   }
 
   // Once decoded properly we can know for sure that the $snid and $urlid are
-  // integers. Fallback on any error is to go to the homepage.
+  // numeric. Fallback on any error is to go to the homepage.
   if (!is_numeric($snid) || !is_numeric($urlid)) {
     watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
     drupal_goto();
