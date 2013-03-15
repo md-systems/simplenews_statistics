@@ -262,7 +262,7 @@ function _simplenews_statistics_parse_links(&$body, $nid, $snid) {
 }
 
 /**
- * Add hidden image for view statistics.
+ * Add hidden image for open statistics.
  */
 function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
   if (is_array($body)) {
