@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Simplenews statistics default views file.
+ */
+
+/**
  * Implements hook_views_default_views().
  */
 function simplenews_statistics_views_default_views() {
@@ -84,6 +89,5 @@ function simplenews_statistics_views_default_views() {
 
   $views[$view->name] = $view;
 
-  // return views
   return $views;
 }

@@ -110,7 +110,7 @@ function simplenews_statistics_views_data() {
       'handler' => 'views_handler_sort_date',
     ),
   );
-  
+
   // Views integration for the urls table.
   $data['simplenews_statistics_urls']['table']['group'] = t('Simplenews Statistics URL\'s');
   $data['simplenews_statistics_urls']['table']['base'] = array(

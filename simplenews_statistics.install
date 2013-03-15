@@ -78,7 +78,7 @@ function simplenews_statistics_schema() {
     ),
     'primary key' => array('oid'),
   );
-  
+
   $schema['simplenews_statistics_urls'] = array(
     'description' => 'All urls for all newslettters',
     'fields' => array(
@@ -99,7 +99,7 @@ function simplenews_statistics_schema() {
     ),
     'primary key' => array('urlid'),
   );
-  
+
   return $schema;
 }
 
@@ -107,7 +107,8 @@ function simplenews_statistics_schema() {
  * Implements hook_install().
  */
 function simplenews_statistics_install() {
-  
+  // @todo: install the schema.
+  // @todo: setup defaults for variables.
 }
 
 /**
@@ -120,8 +121,8 @@ function simplenews_statistics_uninstall() {
 }
 
 /**
- * #7000: 6.x-3.x to 7.x-1.x upgrade.
+ * Upgrade from 6.x-3.x to 7.x-1.x will most likely be impossible.
  */
 function simplenews_statistics_update_7000() {
-  //@todo
+  // @todo: Try and figure this out.
 }
