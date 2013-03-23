@@ -152,7 +152,10 @@ function simplenews_statistics_click($snid, $urlid) {
   // Track click if there is an url and a valid subscriber. For test mails the
   // snid will be 0, so no valid subscriber will be loaded and the click won't
   // be counted. But the clicked link will still redirect properly.
-  $url_record = simplenews_statistics_get_url($url);
+  $query = db_select('simplenews_statistics_urls', 'ssu');
+  $query->fields('ssu');
+  $query->condition('urlid', $urlid);
+  $url_record = $query->execute()->fetchObject();
   $subscriber = simplenews_subscriber_load($snid);
   if ($url_record && $subscriber && $subscriber->snid == $snid) {
     $record = new stdClass();
