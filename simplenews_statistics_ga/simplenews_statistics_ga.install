@@ -9,7 +9,7 @@
  * Implements hook_install().
  */
 function simplenews_statistics_ga_install() {
-  // @todo: setup defaults for variables.
+  // @todo: Setup defaults for variables.
 }
 
 /**

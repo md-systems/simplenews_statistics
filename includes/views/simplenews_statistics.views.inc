@@ -112,10 +112,10 @@ function simplenews_statistics_views_data() {
   );
 
   // Views integration for the urls table.
-  $data['simplenews_statistics_urls']['table']['group'] = t('Simplenews Statistics URL\'s');
+  $data['simplenews_statistics_urls']['table']['group'] = t('Simplenews Statistics URLs');
   $data['simplenews_statistics_urls']['table']['base'] = array(
     'field' => 'urlid',
-    'title' => t('Simplenews Statistics URL\'s'),
+    'title' => t('Simplenews Statistics URLs'),
   );
   $data['simplenews_statistics_urls']['urlid'] = array(
     'title' => t('ID'),

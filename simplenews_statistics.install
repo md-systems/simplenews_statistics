@@ -7,7 +7,7 @@
 
 /**
  * Implements hook_schema().
- * 
+ *
  * @todo: add some sensible indexes
  */
 function simplenews_statistics_schema() {
@@ -123,6 +123,6 @@ function simplenews_statistics_uninstall() {
 /**
  * Upgrade from 6.x-3.x to 7.x-1.x will most likely be impossible.
  */
-function simplenews_statistics_update_7000() {
+/*function simplenews_statistics_update_7000() {
   // @todo: Try and figure this out.
-}
+}*/

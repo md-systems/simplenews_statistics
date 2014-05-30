@@ -5,7 +5,9 @@
  * Main simplenews statistics file.
  */
 
-// @todo: find a way to use simplenews'es message caching (token replacement)
+/**
+ * @todo: Find a way to use simplenews' message caching (token replacement).
+ */
 
 /**
  * Implements hook_menu().
@@ -69,7 +71,7 @@ function simplenews_statistics_access($node = NULL) {
 }
 
 /**
- * Implements hook_node_delete(). 
+ * Implements hook_node_delete().
  */
 function simplenews_statistics_node_delete($node) {
   db_delete('simplenews_statistics_clicks')->condition('nid', $node->nid);
@@ -113,6 +115,7 @@ function simplenews_statistics_open($snid) {
   $type = 'image/png; utf-8';
   drupal_add_http_header('Content-Type', $type);
   drupal_add_http_header('Content-Length', filesize($file));
+  // @todo: These variables are not even defined.
   drupal_add_http_header($name, $value);
   readfile($file);
   drupal_exit();
@@ -164,7 +167,7 @@ function simplenews_statistics_click($snid, $urlid) {
     $record->urlid = $url_record->urlid;
     $record->timestamp = time();
     drupal_write_record('simplenews_statistics_clicks', $record);
-    
+
     // Check if the open action was registered for this subscriber. If not we
     // can track the open here to improve statistics accuracy.
     $query = db_select('simplenews_statistics_opens', 'sso');
@@ -290,17 +293,17 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
 
 /**
  * Gets an url record.
- * 
+ *
  * The caching causes a slight performance hit on our main task: redirecting
  * users. But whilst generating/sending mails it gives us a huge performance
  * gain though!
- * 
- * @param $url
+ *
+ * @param string $url
  *   Complete url to search for.
- * @param $reset
- *   Reset cache for this URL.
- * 
- * @return $url_record
+ * @param bool $reset
+ *   (optional) Reset cache for this URL.
+ *
+ * @return object || FALSE
  *   Object representing the url record or FALSE.
  */
 function simplenews_statistics_get_url($url, $reset = FALSE) {
@@ -324,13 +327,13 @@ function simplenews_statistics_get_url($url, $reset = FALSE) {
 
 /**
  * Creates an url record in the database.
- * 
- * @param $url
- *    The URL.
- * @param $nid
- *    The Simplenews nid this link belongs to.
- * @return $url_record
- *    Object representing the url record or FALSE.
+ *
+ * @param string $url
+ *   The URL.
+ * @param int $nid
+ *   The Simplenews nid this link belongs to.
+ * @return object || FALSE
+ *   Object representing the url record or FALSE.
  */
 function simplenews_statistics_set_url($url, $nid) {
   $record = new stdClass();
@@ -352,8 +355,9 @@ function simplenews_statistics_set_url($url, $nid) {
 function _simplenews_statistics_replace_url($url, $nid, $snid) {
   // Do not replace anchor-links.
   $fragment_position = substr($url, 0, 1);
-  if ($fragment_position == '#')
+  if ($fragment_position == '#') {
     return $url;
+  }
 
   // Do not replace mailto-links unless it is configured.
   $track_emailaddress = variable_get('simplenews_statistics_track_emailaddress', 1);
