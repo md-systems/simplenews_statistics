@@ -42,17 +42,69 @@ function simplenews_statistics_menu() {
 }
 
 /**
+ * Implements hook_menu_alter().
+ */
+function simplenews_statistics_menu_alter(&$items) {
+  // Set a custom access callback function for our view page display path.
+  $items['node/%/simplenews_statistics']['access callback'] = 'simplenews_statistics_menu_tab_access_callback';
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function simplenews_statistics_module_implements_alter(&$implementations, $hook) {
+  // When the implementations of hook_menu_alter are called, we need our module
+  // to be called after views, so let's remove it from the implementations then
+  // add it to the end.
+  if ($hook == 'menu_alter') {
+    if (isset($implementations['simplenews_statistics'])) {
+      unset($implementations['simplenews_statistics']);
+      $implementations['simplenews_statistics'] = FALSE;
+    }
+  }
+}
+
+/**
+ * A custom 'access callback' function used by our view page display
+ * to determine if its local task menu tab should show up or not.
+ */
+function simplenews_statistics_menu_tab_access_callback($options = array()) {
+
+  // Grab the default access callback function name, prepare the access
+  // arguments, then see what the default access call back result is
+  // according to views.
+  $access_callback = $options[0];
+  $access_arguments = $options[1];
+  $access = call_user_func_array($access_callback, $access_arguments);
+
+  // If the default access callback was false, then the user is not allowed
+  // access.
+  if (!$access) {
+    return FALSE;
+  }
+
+  // If the node type is not simplenews, then deny access, else grant access.
+  $node = node_load(arg(1));
+  if ($node && $node->type != 'simplenews') {
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function simplenews_statistics_permission() {
   $perms = array(
     'administer newsletter statistics' => array(
-      'title' => t('administer newsletter statistics'),
-      'description' => t('Allows to administer newsletter statistics. Give to only trusted roles.'),
+      'title' => t('Administer newsletter statistics'),
+      'description' => t('Allows user to administer newsletter statistics.'),
     ),
     'view newsletters statistics' => array(
       'title' => t('View newsletter statistics'),
-      'description' => t('Allows to access the statistics.'),
+      'description' => t('Allows user to access the statistics.'),
     ),
   );
   return $perms;
