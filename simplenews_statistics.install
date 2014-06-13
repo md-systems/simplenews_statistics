@@ -8,7 +8,7 @@
 /**
  * Implements hook_schema().
  *
- * @todo: add some sensible indexes
+ * @todo: Add some sensible indexes.
  */
 function simplenews_statistics_schema() {
   $schema['simplenews_statistics_clicks'] = array(
@@ -104,14 +104,6 @@ function simplenews_statistics_schema() {
 }
 
 /**
- * Implements hook_install().
- */
-function simplenews_statistics_install() {
-  // @todo: install the schema.
-  // @todo: setup defaults for variables.
-}
-
-/**
  * Implements hook_uninstall().
  */
 function simplenews_statistics_uninstall() {
@@ -119,10 +111,3 @@ function simplenews_statistics_uninstall() {
   variable_del('simplenews_statistics_ga_utm_medium');
   variable_del('simplenews_statistics_ga_utm_campaign');
 }
-
-/**
- * Upgrade from 6.x-3.x to 7.x-1.x will most likely be impossible.
- */
-/*function simplenews_statistics_update_7000() {
-  // @todo: Try and figure this out.
-}*/
