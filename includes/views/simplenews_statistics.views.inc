@@ -174,5 +174,69 @@ function simplenews_statistics_views_data() {
     ),
   );
 
+  // Views integration for the opens table.
+  $data['simplenews_statistics_opens']['table']['group'] = t('Simplenews Statistics Opens');
+  $data['simplenews_statistics_opens']['table']['base'] = array(
+    'field' => 'oid',
+    'title' => t('Simplenews Statistics Opens'),
+  );
+  $data['simplenews_statistics_opens']['email'] = array(
+    'title' => t('E-mail'),
+    'help' => t('The email address.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+      'allow empty' => TRUE,
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+  $data['simplenews_statistics_opens']['nid'] = array(
+    'title' => t('Nid'),
+    'help' => t('The simplenews node ID for which the email was opened.'),
+    'relationship' => array(
+      'title' => t('Content'),
+      'help' => t('The simplenews node for which the email was opened.'),
+      'base' => 'node',
+      'base field' => 'nid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Content'),
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+    ),
+  );
+  $data['simplenews_statistics_opens']['timestamp'] = array(
+    'title' => t('Timestamp'),
+    'help' => t('The time at which the user opened the email.'),
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+      'allow empty' => TRUE,
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_date',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_date',
+    ),
+  );
+
   return $data;
 }
