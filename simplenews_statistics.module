@@ -26,16 +26,16 @@ function simplenews_statistics_menu() {
     'weight' => -15,
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items['sns/open/%'] = array(
+  $items['sns/open/%/%'] = array(
     'type' => MENU_CALLBACK,
     'page callback' => 'simplenews_statistics_open',
     'page arguments' => array(2, 3),
     'access arguments' => array('access content'),
   );
-  $items['sns/click/%/%'] = array(
+  $items['sns/click/%/%/%'] = array(
     'type' => MENU_CALLBACK,
     'page callback' => 'simplenews_statistics_click',
-    'page arguments' => array(2, 3),
+    'page arguments' => array(2, 3, 4),
     'access arguments' => array('access content'),
   );
   return $items;
@@ -134,8 +134,8 @@ function simplenews_statistics_node_delete($node) {
 /**
  * Check and log the opens.
  */
-function simplenews_statistics_open($snid) {
-  // Call possible decoders for the snid in modules implementing the hook
+function simplenews_statistics_open($snid, $nid, $return = FALSE) {
+  // Call possible decoders for the snid in modules implementing the hook.
   // Modules implementing this hook should validate this input themself because
   // we can not know what kind of string they will generate.
   $hook = 'simplenews_statistics_decode_snid';
@@ -152,32 +152,38 @@ function simplenews_statistics_open($snid) {
   }
   else {
     $subscriber = simplenews_subscriber_load($snid);
-    if (!empty($subscriber) && !empty($subscriber[$snid])) {
+    if (!empty($subscriber) && $subscriber->snid === $snid) {
       $record = new stdClass();
-      $record->email = $subscriber[$snid]->mail;
-      $record->nid = $subscriber[$snid]->nid;
+      $record->email = $subscriber->mail;
+      $record->nid = $nid;
       $record->timestamp = time();
       drupal_write_record('simplenews_statistics_opens', $record);
     }
   }
 
-  // Render a transparent image.
-  // @todo: set some more headers like cache ...
-  $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
-  $type = 'image/png; utf-8';
-  drupal_add_http_header('Content-Type', $type);
-  drupal_add_http_header('Content-Length', filesize($file));
-  // @todo: These variables are not even defined.
-  drupal_add_http_header($name, $value);
-  readfile($file);
-  drupal_exit();
+  if ($return) {
+    // Return to simplenews_statistics_click()
+    return;
+  }
+  else {
+    // Render a transparent image and stop PHP execution.
+    $type = 'image/png; utf-8';
+    $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
+
+    // @todo: Set some more headers like cache.
+    drupal_add_http_header('Content-Type', $type);
+    drupal_add_http_header('Content-Length', filesize($file));
+
+    readfile($file);
+    drupal_exit();
+  }
 }
 
 /**
  * Check and log the clicks.
  */
-function simplenews_statistics_click($snid, $urlid) {
-  // Call possible decoders for the snid in modules implementing the hook
+function simplenews_statistics_click($snid, $urlid, $nid) {
+  // Call possible decoders for the snid in modules implementing the hook.
   // Modules implementing this hook should validate all input themself because
   // we can not know what kind of strings they will generate.
   $hook = 'simplenews_statistics_decode_snid';
@@ -226,7 +232,7 @@ function simplenews_statistics_click($snid, $urlid) {
     $query->condition('email', $subscriber->mail);
     $num_rows = $query->countQuery()->execute()->fetchField();
     if ($num_rows == 0) {
-      simplenews_statistics_open($subscriber->snid);
+      simplenews_statistics_open($subscriber->snid, $nid, TRUE);
     }
   }
 
@@ -313,9 +319,15 @@ function _simplenews_statistics_parse_links(&$body, $nid, $snid) {
     }
   }
   else {
-    // @todo: try and write some cleaner code here
-    $pattern = '/(<a[^>]+href=")([^"]*)/emi';
-    $body = preg_replace($pattern, '"\\1"._simplenews_statistics_replace_url("\2", $nid, $snid)', $body);
+    // @todo: Try and write some cleaner code here.
+    $body = preg_replace_callback(
+      '/(<a[^>]+href=")([^"]*)/mi',
+      function($matches) use ($nid, $snid) {
+        $value = _simplenews_statistics_replace_url($matches[2], $nid, $snid);
+        return '<a href="' . $value;
+      },
+      $body
+    );
   }
 }
 
@@ -339,7 +351,7 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
         $snid = $function($snid);
       }
     }
-    $body .= '<img src="' . url('sns/open/' . $snid, array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
+    $body .= '<img src="' . url('sns/open/' . $snid . '/' . $nid, array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
   }
 }
 
@@ -391,6 +403,7 @@ function simplenews_statistics_set_url($url, $nid) {
   $record = new stdClass();
   $record->nid = $nid;
   $record->url = $url;
+
   $result = drupal_write_record('simplenews_statistics_urls', $record);
   if (FALSE !== $result) {
     // Immediately cache the record for later use.
@@ -444,7 +457,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  return url('sns/click/' . $snid . '/' . $url_record->urlid, array('absolute' => TRUE));
+  return url('sns/click/' . $snid . '/' . $url_record->urlid . '/' . $nid, array('absolute' => TRUE));
 }
 
 /**
