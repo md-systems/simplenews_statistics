@@ -98,7 +98,7 @@ function simplenews_statistics_schema() {
     ),
   );
 
- $schema['simplenews_statistics_open'] = array(
+  $schema['simplenews_statistics_open'] = array(
     'description' => 'Newsletter open data.',
     'fields' => array(
       'oid' => array(
@@ -177,8 +177,8 @@ function simplenews_statistics_update_7001() {
     'not null' => TRUE,
     'default' => 0,
   );
-  db_add_field( 'simplenews_statistics_click', 'snid', $spec);
-  db_add_field( 'simplenews_statistics_open', 'snid', $spec);
+  db_add_field('simplenews_statistics_click', 'snid', $spec);
+  db_add_field('simplenews_statistics_open', 'snid', $spec);
 
   return t("Schema has been updated. It is still recommended to reinstall this module to ensure that the database schema is completely correct.");
 }

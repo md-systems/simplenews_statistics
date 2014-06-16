@@ -11,7 +11,7 @@
 function simplenews_statistics_views_data() {
   // Views definitions for the 'clicks' table.
   $data['simplenews_statistics_click']['table'] = array(
-    'base' => array (
+    'base' => array(
       'field' => 'cid',
       'title' => t('Simplenews Statistics clicks'),
     ),
@@ -99,7 +99,7 @@ function simplenews_statistics_views_data() {
 
   // Views definitions for the 'urls' table.
   $data['simplenews_statistics_url']['table'] = array(
-    'base' => array (
+    'base' => array(
       'field' => 'urlid',
       'title' => t('Simplenews Statistics URLs'),
     ),
