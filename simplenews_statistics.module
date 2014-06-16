@@ -126,22 +126,25 @@ function simplenews_statistics_access($node = NULL) {
  */
 function simplenews_statistics_node_delete($node) {
   // @todo Do a conditional check for type 'simplenews'.
-  $urlids = db_select('simplenews_statistics_url', 'ssu')
+  $results = db_select('simplenews_statistics_url', 'ssu')
     ->fields('ssu', array('urlid'))
     ->condition('ssu.nid', $node->nid)
-    ->execute()
-    ->fetchAllAssoc();
-  dpm($urlids);
+    ->execute()->fetchAllAssoc('urlid');
+  $urlids = array();
+  foreach ($results as $key => $value) {
+    $urlids[] = $key;
+  }
   db_delete('simplenews_statistics_click')
     ->condition('urlid', $urlids)
     ->execute();
+  // @todo We might want to keep the URLs so that they'd still be clickable.
   db_delete('simplenews_statistics_url')
     ->condition('nid', $node->nid)
     ->execute();
   db_delete('simplenews_statistics_open')
     ->condition('nid', $node->nid)
     ->execute();
-  // @todo Do similar for subscribers when they are "deleted".
+  // @todo Do similar per subscriber when they are deleted.
 }
 
 /**
