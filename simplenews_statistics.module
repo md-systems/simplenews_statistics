@@ -228,7 +228,6 @@ function simplenews_statistics_click($urlid) {
     $click_record = new stdClass();
     $click_record->urlid = $urlid;
     $click_record->timestamp = time();
-    dpm("Hello?");
     drupal_write_record('simplenews_statistics_click', $click_record);
 
     // Check if the open action was registered for this subscriber. If not we
