@@ -11,22 +11,48 @@
  * @todo: Add some sensible indexes.
  */
 function simplenews_statistics_schema() {
-  $schema['simplenews_statistics_clicks'] = array(
-    'description' => 'Newsletter Clicks',
+  $schema['simplenews_statistics_url'] = array(
+    'description' => 'All URLs for all newslettter nodes.',
     'fields' => array(
-      'cid' => array(
+      'urlid' => array(
+        'description' => 'The primary identifier for a URL record.',
         'type' => 'serial',
         'not null' => TRUE,
       ),
-      'email' => array(
-        'description' => 'Primary key: Email.',
-        'type' => 'varchar',
-        'not null' => TRUE,
-        'length' => 255,
-        'default' => '',
-      ),
       'nid' => array(
-        'description' => 'Node ID.',
+        'description' => 'The {node).nid in which the URL resides.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'url' => array(
+        'description' => 'The original URL of a link in a newsletter.',
+        'type' => 'text',
+        'size' => 'normal',
+      ),
+    ),
+    'primary key' => array('urlid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+    'foreign keys' => array(
+      'nid' => array(
+        'table' => 'node',
+        'columns' => array('nid' => 'nid'),
+      ),
+    ),
+  );
+
+  $schema['simplenews_statistics_click'] = array(
+    'description' => 'Newsletter URL click data.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'The primary identifier for a URL click record.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'snid' => array(
+        'description' => 'The {simplenews_subscriber}.snid for a click record.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
@@ -37,8 +63,14 @@ function simplenews_statistics_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'nid' => array(
+        'description' => 'The {node}.nid.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'timestamp' => array(
-        'description' => 'The time of the click',
+        'description' => 'The time at which the URL was clicked.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -46,30 +78,48 @@ function simplenews_statistics_schema() {
       ),
     ),
     'primary key' => array('cid'),
+    'indexes' => array(
+      'urlid' => array('urlid'),
+      'nid' => array('nid'),
+    ),
+    'foreign keys' => array(
+      'snid' => array(
+        'table' => 'simplenews_subscriber',
+        'columns' => array('snid' => 'snid'),
+      ),
+      'urlid' => array(
+        'table' => 'simplenews_statistics_url',
+        'columns' => array('urlid' => 'urlid'),
+      ),
+      'nid' => array(
+        'table' => 'node',
+        'columns' => array('nid' => 'nid'),
+      ),
+    ),
   );
 
-  $schema['simplenews_statistics_opens'] = array(
-    'description' => 'Newsletter Opens',
+ $schema['simplenews_statistics_open'] = array(
+    'description' => 'Newsletter open data.',
     'fields' => array(
       'oid' => array(
+        'description' => 'The primary identifier for an email open record.',
         'type' => 'serial',
         'not null' => TRUE,
       ),
-      'email' => array(
-        'description' => 'Primary key: Email.',
-        'type' => 'varchar',
+      'snid' => array(
+        'description' => 'The {simplenews_subscriber}.snid for an open record.',
+        'type' => 'int',
         'not null' => TRUE,
-        'length' => 255,
-        'default' => '',
+        'default' => 0,
       ),
       'nid' => array(
-        'description' => 'Node ID.',
+        'description' => 'The {node}.nid.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
       ),
       'timestamp' => array(
-        'description' => 'Time of view',
+        'description' => 'The time at which the email was opened.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -77,27 +127,19 @@ function simplenews_statistics_schema() {
       ),
     ),
     'primary key' => array('oid'),
-  );
-
-  $schema['simplenews_statistics_urls'] = array(
-    'description' => 'All urls for all newslettters',
-    'fields' => array(
-      'urlid' => array(
-        'type' => 'serial',
-        'not null' => TRUE,
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+    'foreign keys' => array(
+      'snid' => array(
+        'table' => 'simplenews_subscriber',
+        'columns' => array('snid' => 'snid'),
       ),
       'nid' => array(
-        'description' => 'Node ID.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'url' => array(
-        'type' => 'text',
-        'size' => 'normal',
+        'table' => 'node',
+        'columns' => array('nid' => 'nid'),
       ),
     ),
-    'primary key' => array('urlid'),
   );
 
   return $schema;
@@ -107,7 +149,36 @@ function simplenews_statistics_schema() {
  * Implements hook_uninstall().
  */
 function simplenews_statistics_uninstall() {
+  // @todo Shouldn't these be removed from the ga submodule?
   variable_del('simplenews_statistics_ga_utm_source');
   variable_del('simplenews_statistics_ga_utm_medium');
   variable_del('simplenews_statistics_ga_utm_campaign');
+  // Delete all variables added by this module.
+  variable_del('simplenews_statistics_*');
+}
+
+/**
+ * Update schema by renaming tables and fields.
+ */
+function simplenews_statistics_update_7001() {
+  // Rename all tables to drop the plural.
+  db_rename_table('simplenews_statistics_urls', 'simplenews_statistics_url');
+  db_rename_table('simplenews_statistics_clicks', 'simplenews_statistics_click');
+  db_rename_table('simplenews_statistics_opens', 'simplenews_statistics_open');
+
+  // Drop 'email' fields from click and open tables.
+  db_drop_field('simplenews_statistics_click', 'email');
+  db_drop_field('simplenews_statistics_open', 'email');
+
+  // Add 'snid' field to click and open tables.
+  $spec = array(
+    'description' => 'The {simplenews_subscriber}.snid for a click record.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field( 'simplenews_statistics_click', 'snid', $spec);
+  db_add_field( 'simplenews_statistics_open', 'snid', $spec);
+
+  return t("Schema has been updated. It is still recommended to reinstall this module to ensure that the database schema is completely correct.");
 }

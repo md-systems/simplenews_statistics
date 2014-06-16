@@ -66,7 +66,7 @@ function simplenews_statistics_module_implements_alter(&$implementations, $hook)
 
 /**
  * A custom 'access callback' function used by our view page display
- * to determine if its local task menu tab should show up or not.
+ * to determine if its local task menu tab should be shown or not.
  */
 function simplenews_statistics_menu_tab_access_callback($options = array()) {
 
@@ -77,19 +77,18 @@ function simplenews_statistics_menu_tab_access_callback($options = array()) {
   $access_arguments = $options[1];
   $access = call_user_func_array($access_callback, $access_arguments);
 
-  // If the default access callback was false, then the user is not allowed
-  // access.
   if (!$access) {
+    // The default access callback is false, so the user is not allowed access.
     return FALSE;
   }
 
-  // If the node type is not simplenews, then deny access, else grant access.
+  // Show tab only if the node type is 'simplenews'.
   $node = node_load(arg(1));
-  if ($node && $node->type != 'simplenews') {
-    return FALSE;
+  if ($node && $node->type == 'simplenews') {
+    return TRUE;
   }
   else {
-    return TRUE;
+    return FALSE;
   }
 }
 
@@ -126,9 +125,16 @@ function simplenews_statistics_access($node = NULL) {
  * Implements hook_node_delete().
  */
 function simplenews_statistics_node_delete($node) {
-  db_delete('simplenews_statistics_clicks')->condition('nid', $node->nid);
-  db_delete('simplenews_statistics_opens')->condition('nid', $node->nid);
-  db_delete('simplenews_statistics_urls')->condition('nid', $node->nid);
+  db_delete('simplenews_statistics_url')
+    ->condition('nid', $node->nid)
+    ->execute();
+  db_delete('simplenews_statistics_click')
+    ->condition('nid', $node->nid)
+    ->execute();
+  db_delete('simplenews_statistics_open')
+    ->condition('nid', $node->nid)
+    ->execute();
+  // @todo Same for subscribers when they are "deleted".
 }
 
 /**
@@ -154,10 +160,10 @@ function simplenews_statistics_open($snid, $nid, $return = FALSE) {
     $subscriber = simplenews_subscriber_load($snid);
     if (!empty($subscriber) && $subscriber->snid === $snid) {
       $record = new stdClass();
-      $record->email = $subscriber->mail;
+      $record->snid = $subscriber->snid;
       $record->nid = $nid;
       $record->timestamp = time();
-      drupal_write_record('simplenews_statistics_opens', $record);
+      drupal_write_record('simplenews_statistics_open', $record);
     }
   }
 
@@ -213,23 +219,23 @@ function simplenews_statistics_click($snid, $urlid, $nid) {
   // Track click if there is an url and a valid subscriber. For test mails the
   // snid will be 0, so no valid subscriber will be loaded and the click won't
   // be counted. But the clicked link will still redirect properly.
-  $query = db_select('simplenews_statistics_urls', 'ssu');
-  $query->fields('ssu');
-  $query->condition('urlid', $urlid);
+  $query = db_select('simplenews_statistics_url', 'ssu')
+    ->fields('ssu')
+    ->condition('urlid', $urlid);
   $url_record = $query->execute()->fetchObject();
   $subscriber = simplenews_subscriber_load($snid);
   if ($url_record && $subscriber && $subscriber->snid == $snid) {
     $record = new stdClass();
-    $record->email = $subscriber->mail;
+    $record->snid = $subscriber->snid;
     $record->nid = $url_record->nid;
     $record->urlid = $url_record->urlid;
     $record->timestamp = time();
-    drupal_write_record('simplenews_statistics_clicks', $record);
+    drupal_write_record('simplenews_statistics_click', $record);
 
     // Check if the open action was registered for this subscriber. If not we
     // can track the open here to improve statistics accuracy.
-    $query = db_select('simplenews_statistics_opens', 'sso');
-    $query->condition('email', $subscriber->mail);
+    $query = db_select('simplenews_statistics_open', 'sso');
+    $query->condition('snid', $subscriber->snid);
     $num_rows = $query->countQuery()->execute()->fetchField();
     if ($num_rows == 0) {
       simplenews_statistics_open($subscriber->snid, $nid, TRUE);
@@ -374,10 +380,10 @@ function simplenews_statistics_get_url($url, $reset = FALSE) {
   // We don't use the magic __FUNCTION__ as parameter because we want to use the
   // static cache outside the scope of this function as well. Mainly in the
   // simplenews_statistics_set_url() function.
-  $cached_urls = &drupal_static('simplenews_statistics_urls');
+  $cached_urls = &drupal_static('simplenews_statistics_url');
 
   if (!isset($cached_urls[$url]) || $reset) {
-    $query = db_select('simplenews_statistics_urls', 'ssu');
+    $query = db_select('simplenews_statistics_url', 'ssu');
     $query->fields('ssu', array('urlid'));
     $query->condition('url', $url);
     $record = $query->execute()->fetchObject();
@@ -404,10 +410,10 @@ function simplenews_statistics_set_url($url, $nid) {
   $record->nid = $nid;
   $record->url = $url;
 
-  $result = drupal_write_record('simplenews_statistics_urls', $record);
+  $result = drupal_write_record('simplenews_statistics_url', $record);
   if (FALSE !== $result) {
     // Immediately cache the record for later use.
-    $cached_urls = &drupal_static('simplenews_statistics_urls');
+    $cached_urls = &drupal_static('simplenews_statistics_url');
     $cached_urls[$url] = $record;
     return $record;
   }
