@@ -38,6 +38,7 @@ function simplenews_statistics_menu() {
     'page arguments' => array(2, 3, 4),
     'access arguments' => array('access content'),
   );
+
   return $items;
 }
 
@@ -69,7 +70,6 @@ function simplenews_statistics_module_implements_alter(&$implementations, $hook)
  * to determine if its local task menu tab should be shown or not.
  */
 function simplenews_statistics_menu_tab_access_callback($options = array()) {
-
   // Grab the default access callback function name, prepare the access
   // arguments, then see what the default access call back result is
   // according to views.
