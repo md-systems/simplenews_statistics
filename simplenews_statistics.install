@@ -19,6 +19,12 @@ function simplenews_statistics_schema() {
         'type' => 'serial',
         'not null' => TRUE,
       ),
+      'snid' => array(
+        'description' => 'The {simplenews_subscriber}.snid for an url record.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'nid' => array(
         'description' => 'The {node).nid in which the URL resides.',
         'type' => 'int',
@@ -36,6 +42,10 @@ function simplenews_statistics_schema() {
       'nid' => array('nid'),
     ),
     'foreign keys' => array(
+      'snid' => array(
+        'table' => 'simplenews_subscriber',
+        'columns' => array('snid' => 'snid'),
+      ),
       'nid' => array(
         'table' => 'node',
         'columns' => array('nid' => 'nid'),
@@ -181,4 +191,19 @@ function simplenews_statistics_update_7001() {
   db_add_field('simplenews_statistics_open', 'snid', $spec);
 
   return t("Schema has been updated. It is still recommended to reinstall this module to ensure that the database schema is completely correct.");
+}
+
+/**
+ * Add snid field to url table.
+ */
+function simplenews_statistics_update_7002() {
+  $spec = array(
+    'description' => 'The {simplenews_subscriber}.snid for an url record.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field('simplenews_statistics_url', 'snid', $spec);
+
+  return t("Field snid added to url table.");
 }

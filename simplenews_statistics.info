@@ -1,8 +1,10 @@
 name = "Simplenews Statistics"
-description = "Gathers newsletter statistics"
-files[] = tests/simplenews_statistics.test
+description = "Gathers newsletter statistics."
+core = 7.x
+package = Statistics
+configure = admin/config/services/simplenews/statistics
+
 dependencies[] = simplenews
 dependencies[] = views
-configure = admin/config/services/simplenews/statistics
-package = Statistics
-core = 7.x
+
+files[] = tests/simplenews_statistics.test
