@@ -58,6 +58,19 @@ function simplenews_statistics_views_data() {
     ),
   );
 
+  $data['simplenews_statistics_url']['snid'] = array(
+    'title' => t('Simplenews subscriber'),
+    'help' => t('The simplenews subscriber.'),
+    'relationship' => array(
+      'title' => t('Subscriber'),
+      'help' => t('The subscriber tied to this URL record.'),
+      'base' => 'simplenews_subscriber',
+      'base field' => 'snid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Simplenews subscriber'),
+    ),
+  );
+
   $data['simplenews_statistics_url']['url'] = array(
     'title' => t('URL'),
     'help' => t('The clicked URL.'),
@@ -104,35 +117,6 @@ function simplenews_statistics_views_data() {
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
-    ),
-    'argument' => array(
-      'handler' => 'views_handler_argument_numeric',
-    ),
-  );
-
-  $data['simplenews_statistics_click']['snid'] = array(
-    'title' => t('Simplenews subscriber'),
-    'help' => t('The simplenews subcriber.'),
-    'relationship' => array(
-      'title' => t('Subscriber'),
-      'help' => t('The subscriber for which the link clicked.'),
-      'base' => 'simplenews_subscriber',
-      'base field' => 'snid',
-      'handler' => 'views_handler_relationship',
-      'label' => t('Simplenews subscriber'),
-    ),
-  );
-
-  $data['simplenews_statistics_click']['nid'] = array(
-    'title' => t('Node ID'),
-    'help' => t('The simplenews node ID for which this click was registered.'),
-    'relationship' => array(
-      'title' => t('Newsletter'),
-      'help' => t('The simplenews node for which this click was registered.'),
-      'base' => 'simplenews_newsletter',
-      'base field' => 'nid',
-      'handler' => 'views_handler_relationship',
-      'label' => t('Newsletter'),
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_numeric',

@@ -53,40 +53,43 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['empty']['area']['empty'] = TRUE;
   $handler->display->display_options['empty']['area']['content'] = 'There are no statistics available for this newsletter.';
   $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
-  /* Relationship: Simplenews Statistics: URL */
+  /* Relationship: Simplenews Statistics click: URL */
   $handler->display->display_options['relationships']['urlid']['id'] = 'urlid';
   $handler->display->display_options['relationships']['urlid']['table'] = 'simplenews_statistics_click';
   $handler->display->display_options['relationships']['urlid']['field'] = 'urlid';
   $handler->display->display_options['relationships']['urlid']['required'] = TRUE;
-  /* Relationship: Simplenews Statistics: Subscriber */
+  /* Relationship: Simplenews Statistics url: Subscriber */
   $handler->display->display_options['relationships']['snid']['id'] = 'snid';
-  $handler->display->display_options['relationships']['snid']['table'] = 'simplenews_statistics_click';
+  $handler->display->display_options['relationships']['snid']['table'] = 'simplenews_statistics_url';
   $handler->display->display_options['relationships']['snid']['field'] = 'snid';
-  /* Field: Simplenews Statistics: Timestamp */
-  $handler->display->display_options['fields']['timestamp']['id'] = 'timestamp';
-  $handler->display->display_options['fields']['timestamp']['table'] = 'simplenews_statistics_click';
-  $handler->display->display_options['fields']['timestamp']['field'] = 'timestamp';
-  $handler->display->display_options['fields']['timestamp']['date_format'] = 'long';
-  /* Field: Simplenews subscriber: Subscriber */
+  $handler->display->display_options['relationships']['snid']['relationship'] = 'urlid';
+  $handler->display->display_options['relationships']['snid']['required'] = TRUE;
+/* Field: Simplenews subscriber: Subscriber */
   $handler->display->display_options['fields']['mail']['id'] = 'mail';
   $handler->display->display_options['fields']['mail']['table'] = 'simplenews_subscriber';
   $handler->display->display_options['fields']['mail']['field'] = 'mail';
   $handler->display->display_options['fields']['mail']['relationship'] = 'snid';
   $handler->display->display_options['fields']['mail']['label'] = 'E-mail';
-  /* Field: Simplenews Statistics: URL */
+  /* Field: Simplenews Statistics url: URL */
   $handler->display->display_options['fields']['url']['id'] = 'url';
   $handler->display->display_options['fields']['url']['table'] = 'simplenews_statistics_url';
   $handler->display->display_options['fields']['url']['field'] = 'url';
   $handler->display->display_options['fields']['url']['relationship'] = 'urlid';
-  /* Sort criterion: Simplenews Statistics: Timestamp */
+  /* Field: Simplenews Statistics click: Timestamp */
+  $handler->display->display_options['fields']['timestamp']['id'] = 'timestamp';
+  $handler->display->display_options['fields']['timestamp']['table'] = 'simplenews_statistics_click';
+  $handler->display->display_options['fields']['timestamp']['field'] = 'timestamp';
+  $handler->display->display_options['fields']['timestamp']['date_format'] = 'long';
+  /* Sort criterion: Simplenews Statistics click: Timestamp */
   $handler->display->display_options['sorts']['timestamp']['id'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['table'] = 'simplenews_statistics_click';
   $handler->display->display_options['sorts']['timestamp']['field'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['order'] = 'DESC';
-  /* Contextual filter: Simplenews Statistics: Nid */
+  /* Contextual filter: Simplenews Statistics url: Nid */
   $handler->display->display_options['arguments']['nid']['id'] = 'nid';
-  $handler->display->display_options['arguments']['nid']['table'] = 'simplenews_statistics_click';
+  $handler->display->display_options['arguments']['nid']['table'] = 'simplenews_statistics_url';
   $handler->display->display_options['arguments']['nid']['field'] = 'nid';
+  $handler->display->display_options['arguments']['nid']['relationship'] = 'urlid';
   $handler->display->display_options['arguments']['nid']['default_action'] = 'default';
   $handler->display->display_options['arguments']['nid']['default_argument_type'] = 'node';
   $handler->display->display_options['arguments']['nid']['summary']['number_of_records'] = '0';

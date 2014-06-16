@@ -125,16 +125,23 @@ function simplenews_statistics_access($node = NULL) {
  * Implements hook_node_delete().
  */
 function simplenews_statistics_node_delete($node) {
-  db_delete('simplenews_statistics_url')
-    ->condition('nid', $node->nid)
-    ->execute();
+  // @todo Do a conditional check for type 'simplenews'.
+  $urlids = db_select('simplenews_statistics_url', 'ssu')
+    ->fields('ssu', array('urlid'))
+    ->condition('ssu.nid', $node->nid)
+    ->execute()
+    ->fetchAllAssoc();
+  dpm($urlids);
   db_delete('simplenews_statistics_click')
+    ->condition('urlid', $urlids)
+    ->execute();
+  db_delete('simplenews_statistics_url')
     ->condition('nid', $node->nid)
     ->execute();
   db_delete('simplenews_statistics_open')
     ->condition('nid', $node->nid)
     ->execute();
-  // @todo Same for subscribers when they are "deleted".
+  // @todo Do similar for subscribers when they are "deleted".
 }
 
 /**
@@ -217,13 +224,12 @@ function simplenews_statistics_click($urlid) {
   $nid = $url_record->nid;
 
   $subscriber = simplenews_subscriber_load($snid);
-  if ($url_record && $subscriber && $subscriber->snid == $snid) {
-    $record = new stdClass();
-    $record->snid = $snid;
-    $record->nid = $nid;
-    $record->urlid = $url_record->urlid;
-    $record->timestamp = time();
-    drupal_write_record('simplenews_statistics_click', $record);
+  if ($url_record) {
+    $click_record = new stdClass();
+    $click_record->urlid = $urlid;
+    $click_record->timestamp = time();
+    dpm("Hello?");
+    drupal_write_record('simplenews_statistics_click', $click_record);
 
     // Check if the open action was registered for this subscriber. If not we
     // can track the open here to improve statistics accuracy.
@@ -274,7 +280,7 @@ function simplenews_statistics_click($urlid) {
     foreach (module_implements($hook) as $module) {
       $function = $module . '_' . $hook;
       if (function_exists($function)) {
-        $function($path, $options, $snid, $url_record->nid);
+        $function($path, $options, $snid, $nid);
       }
     }
     // Fragment behaviour can get out of spec here.
