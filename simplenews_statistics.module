@@ -151,7 +151,7 @@ function simplenews_statistics_node_delete($node) {
 /**
  * Check and log the opens.
  */
-function simplenews_statistics_open($nid, $snid, $return = FALSE) {
+function simplenews_statistics_open($nid, $snid, $terminate = TRUE) {
   // Call possible decoders for the snid in modules implementing the hook.
   // Modules implementing this hook should validate this input themself because
   // we can not know what kind of string they will generate.
@@ -178,22 +178,20 @@ function simplenews_statistics_open($nid, $snid, $return = FALSE) {
     }
   }
 
-  if ($return) {
-    // Return to simplenews_statistics_click()
-    return;
+  if ($terminate == FALSE) {
+    return; // Allow PHP execution to continue.
   }
-  else {
-    // Render a transparent image and stop PHP execution.
-    $type = 'image/png; utf-8';
-    $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
 
-    // @todo: Set some more headers like cache.
-    drupal_add_http_header('Content-Type', $type);
-    drupal_add_http_header('Content-Length', filesize($file));
+  // Render a transparent image and stop PHP execution.
+  $type = 'image/png; utf-8';
+  $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
 
-    readfile($file);
-    drupal_exit();
-  }
+  drupal_add_http_header('Content-Type', $type);
+  drupal_add_http_header('Content-Length', filesize($file));
+  // @todo: Set some more headers like cache.
+
+  readfile($file);
+  drupal_exit();
 }
 
 /**
@@ -240,7 +238,7 @@ function simplenews_statistics_click($urlid) {
     $query->condition('snid', $snid);
     $num_rows = $query->countQuery()->execute()->fetchField();
     if ($num_rows == 0) {
-      simplenews_statistics_open($nid, $snid, TRUE);
+      simplenews_statistics_open($nid, $snid, FALSE);
     }
   }
 
