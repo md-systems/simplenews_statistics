@@ -125,26 +125,27 @@ function simplenews_statistics_access($node = NULL) {
  * Implements hook_node_delete().
  */
 function simplenews_statistics_node_delete($node) {
-  // @todo Do a conditional check for type 'simplenews'.
-  $results = db_select('simplenews_statistics_url', 'ssu')
-    ->fields('ssu', array('urlid'))
-    ->condition('ssu.nid', $node->nid)
-    ->execute()->fetchAllAssoc('urlid');
-  $urlids = array();
-  foreach ($results as $key => $value) {
-    $urlids[] = $key;
+  if ($node->type == 'simplenews') {
+    // Delete all click and open records for this newsletter.
+    $url_query = db_select('simplenews_statistics_url', 'ssu')
+      ->fields('ssu', array('urlid'))
+      ->condition('ssu.nid', $node->nid);
+    $result = $url_query->execute();
+
+    $urlids = array();
+    foreach ($result as $url_record) {
+      $urlids[] = $url_record->urlid;
+    }
+
+    db_delete('simplenews_statistics_click')
+      ->condition('urlid', $urlids)
+      ->execute();
+    db_delete('simplenews_statistics_open')
+      ->condition('nid', $node->nid)
+      ->execute();
+    // Keep the URL records so links in the newsletter will still be clickable.
+    // @todo Delete clicks and opens per subscriber when they are deleted.
   }
-  db_delete('simplenews_statistics_click')
-    ->condition('urlid', $urlids)
-    ->execute();
-  // @todo We might want to keep the URLs so that they'd still be clickable.
-  db_delete('simplenews_statistics_url')
-    ->condition('nid', $node->nid)
-    ->execute();
-  db_delete('simplenews_statistics_open')
-    ->condition('nid', $node->nid)
-    ->execute();
-  // @todo Do similar per subscriber when they are deleted.
 }
 
 /**
