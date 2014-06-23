@@ -10,7 +10,7 @@
  */
 function simplenews_statistics_encoder_menu() {
   $items['admin/config/services/simplenews/statistics/encoder'] = array(
-    'title' => 'Parameter encoding',
+    'title' => 'Parameter Encoding',
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('simplenews_statistics_encoder_admin_settings_form'),
@@ -24,13 +24,13 @@ function simplenews_statistics_encoder_menu() {
  * Implements hook_permission().
  */
 function simplenews_statistics_encoder_permission() {
-  $perms = array(
-    'administer paramater encoding for newsletter statistics' => array(
-      'title' => t('administer paramater encoding for newsletter statistics'),
-      'description' => t('Allows to administer parameter encoding settings for newsletter statistics. Give to only trusted roles.'),
+  return array(
+    'administer newsletter paramater encoding' => array(
+      'title' => t('Administer newsletter paramater encoding'),
+      'description' => t('Allows to administer parameter encoding settings for newsletter statistics.'),
+      'restrict access' => TRUE,
     ),
   );
-  return $perms;
 }
 
 /**

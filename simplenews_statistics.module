@@ -22,15 +22,21 @@ function simplenews_statistics_menu() {
     'access arguments' => array('administer newsletter statistics'),
     'file' => 'includes/simplenews_statistics.admin.inc',
   );
+  $items['admin/config/services/simplenews/statistics/settings'] = array(
+    'title' => 'Settings',
+    'weight' => -15,
+    'type' => MENU_DEFAULT_LOCAL_TASK, // Visible once submodules are enabled.
+  );
   // Statistics.
-  $items['node/%/simplenews_statistics'] = array(
-    'title' => 'Simplenews Statistics',
+  $items['node/%node/simplenews_statistics'] = array(
+    'title' => 'Statistics',
     'type' => MENU_LOCAL_TASK,
-    'page callback' => 'simplenews_statistics_page',
+    'page callback' => 'simplenews_statistics_node_tab_page',
     'page arguments' => array(1),
     'access arguments' => array('view newsletter statistics', 1),
-    'access callback' => 'simplenews_statistics_page_access',
+    'access callback' => 'simplenews_statistics_node_tab_access',
     'file' => 'includes/simplenews_statistics.pages.inc',
+    'weight' => 1,
   );
   // Tracking.
   $items['track/open/%/%'] = array(
@@ -54,13 +60,8 @@ function simplenews_statistics_menu() {
 /**
  * Access callback for statistics page.
  */
-function simplenews_statistics_page_access($permission, $nid) {
-  $node = node_load($nid);
-  if ($node && $node->type == 'simplenews' && user_access($permission)) {
-    return TRUE;
-  }
-
-  return FALSE;
+function simplenews_statistics_node_tab_access($permission, $node) {
+  return simplenews_check_node_types($node->type) && user_access($permission);
 }
 
 /**
@@ -68,15 +69,15 @@ function simplenews_statistics_page_access($permission, $nid) {
  */
 function simplenews_statistics_menu_alter(&$items) {
   // Set an access callback function for simplenews statistics' default views.
-  $items['node/%/simplenews_statistics/opens']['access callback'] = 'simplenews_statistics_menu_tab_access_callback';
-  $items['node/%/simplenews_statistics/clicks']['access callback'] = 'simplenews_statistics_menu_tab_access_callback';
+  $items['node/%/simplenews_statistics/opens']['access callback'] = 'simplenews_statistics_view_tab_access';
+  $items['node/%/simplenews_statistics/clicks']['access callback'] = 'simplenews_statistics_view_tab_access';
 }
 
 /**
  * Access callback used by the statistics view page displays to determine if
  * the local task menu tabs should be displayed.
  */
-function simplenews_statistics_menu_tab_access_callback($options = array()) {
+function simplenews_statistics_view_tab_access($options = array()) {
   // Check if user has permission to view this display.
   $access_callback = $options[0];
   $access_arguments = $options[1];

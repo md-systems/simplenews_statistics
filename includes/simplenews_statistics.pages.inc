@@ -155,7 +155,8 @@ function simplenews_statistics_click_page($urlid) {
  * WIP.
  * @todo: How to tie this in to views?
  */
-function simplenews_statistics_page($nid) {
+function simplenews_statistics_node_tab_page($node) {
+  $nid = $node->nid;
   $newsletter = simplenews_newsletter_load($nid);
 
   $subscriber_count = simplenews_statistics_get_subscriber_count($newsletter);
@@ -170,7 +171,7 @@ function simplenews_statistics_page($nid) {
   }
 
   $open_rate = 0;
-  if ($subscriber_count != 0) {
+  if ($sent_count != 0) {
     $open_rate = round($unique_opens / $sent_count * 100, 0);
   }
 
