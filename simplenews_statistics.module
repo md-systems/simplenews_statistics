@@ -30,6 +30,7 @@ function simplenews_statistics_menu() {
     'page arguments' => array(1),
     'access arguments' => array('view newsletter statistics', 1),
     'access callback' => 'simplenews_statistics_page_access',
+    'file' => 'includes/simplenews_statistics.pages.inc',
   );
   // Tracking.
   $items['track/open/%/%'] = array(
@@ -77,7 +78,6 @@ function simplenews_statistics_menu_alter(&$items) {
  */
 function simplenews_statistics_menu_tab_access_callback($options = array()) {
   // Check if user has permission to view this display.
-  // @todo If a view access permission is not set then this will fail.
   $access_callback = $options[0];
   $access_arguments = $options[1];
   $access = call_user_func_array($access_callback, $access_arguments);
@@ -327,36 +327,67 @@ function simplenews_statistics_views_api() {
 }
 
 /**
- * Page callback for simplenews statistics overview.
- *
- * WIP. Subscriber count and sent count.
- * @todo: How to tie this in to views?
- * @todo: Move to pages.inc.
+ * Implements hook_theme().
  */
-function simplenews_statistics_page($nid) {
-  // simplenews_newsletter sn: nid, tid, status
-  $newsletter = simplenews_newsletter_load($nid);
-  //dpm($newsletter);
-  // Get subsciber count.
-  module_load_include('inc', 'simplenews', 'includes/simplenews.admin');
-  $subscriber_count = simplenews_count_subscriptions($newsletter->tid);
-  // Sent count is stored in newsletter.
-  $sent_count = $newsletter->sent_subscriber_count;
-  $open_count = simplenews_statistics_get_open_count($nid);
-
-  // dpm($subscriber_count);
-  //dpm($sent_count);
-  // dpm($open_count);
-
-  return "<table><caption>Newsletter overview</caption><tr><th>Emails Sent</th><th>Emails Opened</th><th>Links Clicked</th></tr><tr><td>$sent_count</td><td>$open_count</td><td>not available</td></tr></table><p>Open count is not unique and includes test emails.</p>";
+function simplenews_statistics_theme() {
+  return array(
+    'simplenews_statistics' => array(
+      'variables' => array('statistics' => NULL),
+      'template' => 'simplenews-statistics',
+      'path' => drupal_get_path('module', 'simplenews_statistics') . '/theme',
+    ),
+  );
 }
 
 /**
  * Get open count for the given node.
  */
-function simplenews_statistics_get_open_count($nid) {
-  $query = db_select('simplenews_statistics_open', 'ssc')
-    ->condition('ssc.nid', $nid)
-    ->countQuery();
-  return $query->execute()->fetchField();
+function simplenews_statistics_get_open_count($nid, $distinct = FALSE) {
+  $query = db_select('simplenews_statistics_open', 'sso')
+    ->condition('sso.nid', $nid);
+
+  if ($distinct) {
+    $query->fields('sso', array('snid'))->distinct();
+  }
+
+  return $query->countQuery()->execute()->fetchField();
+}
+
+/**
+ * Get subscriber count for the given newsletter node.
+ */
+function simplenews_statistics_get_subscriber_count($newsletter) {
+  module_load_include('inc', 'simplenews', 'includes/simplenews.admin');
+
+  return simplenews_count_subscriptions($newsletter->tid);
+}
+
+/**
+ *  Get URLs with click counts for the given newsletter node.
+ */
+function simplenews_statistics_get_clicks($nid) {
+  $url_query = db_select('simplenews_statistics_url', 'ssu')
+    ->fields('ssu', array('urlid', 'url'))
+    ->condition('ssu.nid', $nid);
+  $url_records = $url_query->execute()->fetchAllAssoc('urlid');
+
+  foreach ($url_records as $record) {
+    $query = db_select('simplenews_statistics_click', 'ssc')
+      ->condition('ssc.urlid', $record->urlid);
+
+    $record->clicks = $query->countQuery()->execute()->fetchField();
+  }
+
+  return $url_records;
+}
+
+function simplenews_statistics_unique_opened_and_clicked_count($nid) {
+  // Number of unique subscribers who have opened a link.
+  $query = db_select('simplenews_statistics_url', 'ssu')
+    ->fields('ssu', array('snid'))
+    ->condition('ssu.nid', $nid);
+  $query->join('simplenews_statistics_click', 'ssc', 'ssc.urlid = ssu.urlid');
+  $query->distinct();
+
+  return $query->countQuery()->execute()->fetchField();
 }

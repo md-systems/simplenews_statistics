@@ -148,3 +148,48 @@ function simplenews_statistics_click_page($urlid) {
   // Fallback on any error is to go to the homepage.
   drupal_goto();
 }
+
+/**
+ * Page callback for simplenews statistics overview.
+ *
+ * WIP.
+ * @todo: How to tie this in to views?
+ */
+function simplenews_statistics_page($nid) {
+  $newsletter = simplenews_newsletter_load($nid);
+
+  $subscriber_count = simplenews_statistics_get_subscriber_count($newsletter);
+  $sent_count = $newsletter->sent_subscriber_count;
+  $total_opens = simplenews_statistics_get_open_count($nid);
+  $unique_opens = simplenews_statistics_get_open_count($nid, TRUE);
+  $clicks = simplenews_statistics_get_clicks($nid);
+
+  $total_clicks = 0;
+  foreach ($clicks as $click) {
+    $total_clicks += $click->clicks;
+  }
+
+  $open_rate = 0;
+  if ($subscriber_count != 0) {
+    $open_rate = round($unique_opens / $sent_count * 100, 0);
+  }
+
+  $unique_clicks = simplenews_statistics_unique_opened_and_clicked_count($nid);
+  $ctr = 0;
+  if ($unique_opens != 0) {
+    $ctr = round($unique_clicks / $unique_opens * 100, 0);
+  }
+
+  $statistics = array(
+    'sent_count' => $sent_count,
+    'subscriber_count' => $subscriber_count,
+    'total_opens' => $total_opens,
+    'unique_opens' => $unique_opens,
+    'clicks' => $clicks,
+    'total_clicks' => $total_clicks,
+    'open_rate' => $open_rate,
+    'ctr' => $ctr,
+  );
+
+  return theme('simplenews_statistics', array('statistics' => $statistics));
+}
