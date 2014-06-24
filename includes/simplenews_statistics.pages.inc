@@ -26,7 +26,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
   }
   else {
     $subscriber = simplenews_subscriber_load($snid);
-    if (!empty($subscriber) && $subscriber->snid === $snid) {
+    if (!empty($subscriber) && $subscriber->snid == $snid) {
       $record = new stdClass();
       $record->snid = $subscriber->snid;
       $record->nid = $nid;
