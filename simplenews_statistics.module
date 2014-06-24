@@ -264,8 +264,8 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
 
   // Get the url record from the database. Uses Drupal's static caching if
   // available. Create a new record in database and cache if there isn't one.
-  $url_record = simplenews_statistics_get_url($url);
-  if (FALSE === $url_record) {
+  $url_record = simplenews_statistics_get_url($url, $nid);
+  if ($url_record == FALSE) {
     $url_record = simplenews_statistics_set_url($url, $nid);
   }
 
@@ -298,13 +298,15 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
  *
  * @param string $url
  *   Complete url to search for.
+ * @param string $nid
+ *   Node ID that url should be for.
  * @param bool $reset
  *   (optional) Reset cache for this URL.
  *
  * @return object || FALSE
  *   Object representing the url record or FALSE.
  */
-function simplenews_statistics_get_url($url, $reset = FALSE) {
+function simplenews_statistics_get_url($url, $nid, $reset = FALSE) {
   // We don't use the magic __FUNCTION__ as parameter because we want to use the
   // static cache outside the scope of this function as well. Mainly in the
   // simplenews_statistics_set_url() function.
@@ -314,12 +316,19 @@ function simplenews_statistics_get_url($url, $reset = FALSE) {
     $query = db_select('simplenews_statistics_url', 'ssu');
     $query->fields('ssu', array('urlid'));
     $query->condition('url', $url);
+    $query->condition('nid', $nid);
     $record = $query->execute()->fetchObject();
     if ($record !== FALSE) {
       $cached_urls[$url] = $record;
       return $record;
     }
   }
+  elseif (isset($cached_urls[$url])) {
+    // @todo: If multiple nodes are being sent simultaniously (e.g. by cron)
+    // then we could in odd cases be returning the wrong urlid.
+    return $cached_urls[$url];
+  }
+
   return FALSE;
 }
 
