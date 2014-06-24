@@ -54,7 +54,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
 /**
  * Check and log newsletter URL clicks.
  */
-function simplenews_statistics_click_page($urlid) {
+function simplenews_statistics_click_page($urlid, $snid) {
   // Call possible decoders for the urlid in modules implementing the hook.
   $hook = 'simplenews_statistics_decode_urlid';
   foreach (module_implements($hook) as $module) {
@@ -63,11 +63,19 @@ function simplenews_statistics_click_page($urlid) {
       $urlid = $function($urlid);
     }
   }
+  // Call possible decoders for the snid in modules implementing the hook.
+  $hook = 'simplenews_statistics_decode_snid';
+  foreach (module_implements($hook) as $module) {
+    $function = $module . '_' . $hook;
+    if (function_exists($function)) {
+      $snid = $function($snid);
+    }
+  }
 
   // Once decoded properly we can know for sure that the $snid and $urlid are
   // numeric. Fallback on any error is to go to the homepage.
-  if (!is_numeric($urlid)) {
-    watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter.');
+  if (!is_numeric($urlid) || !is_numeric($snid)) {
+    watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
     drupal_goto();
   }
 
@@ -79,13 +87,13 @@ function simplenews_statistics_click_page($urlid) {
     ->condition('urlid', $urlid);
   $url_record = $query->execute()->fetchObject();
 
-  $snid = $url_record->snid;
   $nid = $url_record->nid;
 
   $subscriber = simplenews_subscriber_load($snid);
   if ($url_record) {
     $click_record = new stdClass();
     $click_record->urlid = $urlid;
+    $click_record->snid = $snid;
     $click_record->timestamp = time();
     drupal_write_record('simplenews_statistics_click', $click_record);
 
