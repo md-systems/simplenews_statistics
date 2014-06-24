@@ -262,6 +262,11 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
+  // Do not replace unsubscribe links.
+  if (strpos($url, '/newsletter/confirm/remove/') !== FALSE) {
+    return $url;
+  }
+
   // Get the url record from the database. Uses Drupal's static caching if
   // available. Create a new record in database and cache if there isn't one.
   $url_record = simplenews_statistics_get_url($url, $nid);

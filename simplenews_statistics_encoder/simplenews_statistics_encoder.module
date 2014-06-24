@@ -6,6 +6,17 @@
  */
 
 /**
+ * @todo: Implement a system like simplenews' hash for sub and unsub links.
+ *
+ * See: simplenews_private_key()
+ *   md5(uniqid(rand()));
+ * See: simplenews_generate_hash()
+ *   drupal_substr(md5($mail . simplenews_private_key()), 0, 10).$snid.'t'.$tid;
+ * See: simplenews_subscriber_load_by_hash($hash)
+ *
+ */
+
+/**
  * Implements hook_menu().
  */
 function simplenews_statistics_encoder_menu() {
