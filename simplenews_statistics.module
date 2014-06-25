@@ -196,6 +196,33 @@ function simplenews_statistics_mail_alter(&$message) {
     // Add view image.
     _simplenews_statistics_image_tag($message['body'], $node->nid, $snid);
   }
+
+  if ($message['id'] == 'simplenews_node') {
+    // This is a true newsletter send: create record if one does not exist.
+    $query = db_select('simplenews_statistics', 'ss')
+      ->fields('ss', array('nid'))
+      ->condition('nid', $node->nid);
+    $result = $query->execute()->fetchField();
+    if ($result === FALSE) {
+      $record = new stdClass();
+      $record->nid = $node->nid;
+      $record->subscriber_count = simplenews_statistics_count_subscribers($node->nid);
+      drupal_write_record('simplenews_statistics', $record);
+    }
+
+    // Set the send_start_timestamp if this is the first newsletter.
+    db_update('simplenews_statistics')
+      ->fields(array('send_start_timestamp' => time()))
+      ->condition('nid', $node->nid)
+      ->condition('send_start_timestamp', 0)
+      ->execute();
+
+    // Set send_end_timestamp to time() for every newsletter sent.
+    db_update('simplenews_statistics')
+      ->fields(array('send_end_timestamp' => time()))
+      ->condition('nid', $node->nid)
+      ->execute();
+  }
 }
 
 /**
@@ -318,10 +345,10 @@ function simplenews_statistics_get_url($url, $nid, $reset = FALSE) {
   $cached_urls = &drupal_static('simplenews_statistics_url');
 
   if (!isset($cached_urls[$url]) || $reset) {
-    $query = db_select('simplenews_statistics_url', 'ssu');
-    $query->fields('ssu', array('urlid'));
-    $query->condition('url', $url);
-    $query->condition('nid', $nid);
+    $query = db_select('simplenews_statistics_url', 'ssu')
+      ->fields('ssu', array('urlid'))
+      ->condition('url', $url)
+      ->condition('nid', $nid);
     $record = $query->execute()->fetchObject();
     if ($record !== FALSE) {
       $cached_urls[$url] = $record;
@@ -379,8 +406,9 @@ function simplenews_statistics_get_open_count($nid, $distinct = FALSE) {
 /**
  * Get subscriber count for the given newsletter node.
  */
-function simplenews_statistics_get_subscriber_count($newsletter) {
+function simplenews_statistics_count_subscribers($nid) {
   module_load_include('inc', 'simplenews', 'includes/simplenews.admin');
+  $newsletter = simplenews_newsletter_load($nid);
 
   return simplenews_count_subscriptions($newsletter->tid);
 }

@@ -141,7 +141,7 @@ function simplenews_statistics_views_data() {
   );
 
   $data['simplenews_statistics_click']['timestamp'] = array(
-    'title' => t('Click timestamp'),
+    'title' => t('Timestamp') . ' » ' . t('Click'),
     'help' => t('The UNIX timestamp when the user clicked this link.'),
     'field' => array(
       'handler' => 'views_handler_field_date',
@@ -226,7 +226,7 @@ function simplenews_statistics_views_data() {
   );
 
   $data['simplenews_statistics_open']['timestamp'] = array(
-    'title' => t('Open timestamp'),
+    'title' => t('Timestamp') . ' » ' . t('Open'),
     'help' => t('The UNIX timestamp at which the user opened the email.'),
     'field' => array(
       'handler' => 'views_handler_field_date',
@@ -241,6 +241,88 @@ function simplenews_statistics_views_data() {
     ),
     'sort' => array(
       'handler' => 'views_handler_sort_date',
+    ),
+  );
+
+  // Views integration definitions for the 'simplenews_statistics' table.
+  $data['simplenews_statistics']['table'] = array(
+    'group' => t('Simplenews Statistics'),
+    'join' => array(
+      'node' => array(
+        'left_field' => 'nid',
+        'field' => 'nid',
+      ),
+    ),
+  );
+
+  $data['simplenews_statistics']['send_start_timestamp'] = array(
+    'title' => t('Timestamp') . ' » ' . t('Sending started'),
+    'help' => t('The time the sending of the newsletter started.'),
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+      'allow empty' => TRUE,
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_date',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_date',
+    ),
+  );
+
+  $data['simplenews_statistics']['send_end_timestamp'] = array(
+    'title' => t('Timestamp') . ' » ' . t('Sending finished'),
+    'help' => t('The time the sending of the newsletter ended.'),
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+      'allow empty' => TRUE,
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_date',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_date',
+    ),
+  );
+
+  // Views integration for calculations with custom handlers.
+  $data['simplenews_statistics']['subscriber_count'] = array(
+    'title' => t('Subscriber count'),
+    'help' => t('Calculate the subscriber count. More accurate than the number provided by <em>Simplenews issue: Subscriber count</em>.'),
+    'field' => array(
+      'handler' => 'simplenews_statistics_handler_subscriber_count',
+    ),
+  );
+
+  $data['simplenews_statistics']['subscriber_count'] = array(
+    'title' => t('Subscriber count'),
+    'help' => t('Shows current number of subscribers if not yet sent and number of subscribers at time of sending if sent. More accurate than the number provided by <em>Simplenews issue: Subscriber count</em>.'),
+    'field' => array(
+      'handler' => 'simplenews_statistics_handler_subscribers',
+    ),
+  );
+
+  $data['simplenews_statistics']['open_count'] = array(
+    'title' => t('Open count'),
+    'help' => t('Open count and rate.'),
+    'field' => array(
+      'handler' => 'simplenews_statistics_handler_opens',
+    ),
+  );
+
+  $data['simplenews_statistics']['click_count'] = array(
+    'title' => t('Click count'),
+    'help' => t('Click count and CTR (click-through rate).'),
+    'field' => array(
+      'handler' => 'simplenews_statistics_handler_clicks',
     ),
   );
 

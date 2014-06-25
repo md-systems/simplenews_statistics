@@ -167,7 +167,7 @@ function simplenews_statistics_node_tab_page($node) {
   $nid = $node->nid;
   $newsletter = simplenews_newsletter_load($nid);
 
-  $subscriber_count = simplenews_statistics_get_subscriber_count($newsletter);
+  $subscriber_count = simplenews_statistics_count_subscribers($nid);
   $sent_count = $newsletter->sent_subscriber_count;
   $total_opens = simplenews_statistics_get_open_count($nid);
   $unique_opens = simplenews_statistics_get_open_count($nid, TRUE);

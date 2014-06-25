@@ -7,4 +7,10 @@ configure = admin/config/services/simplenews/statistics
 dependencies[] = simplenews
 dependencies[] = views
 
+; Tests
 files[] = tests/simplenews_statistics.test
+
+; Views Handlers
+files[] = includes/views/handlers/simplenews_statistics_handler_subscribers.inc
+files[] = includes/views/handlers/simplenews_statistics_handler_opens.inc
+files[] = includes/views/handlers/simplenews_statistics_handler_clicks.inc

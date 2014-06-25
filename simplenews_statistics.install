@@ -11,6 +11,45 @@
  * @todo: Add some sensible indexes.
  */
 function simplenews_statistics_schema() {
+  $schema['simplenews_statistics'] = array(
+    'description' => 'Additional fields for {simplenews_newsletter}.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The {simplenews_newsletter}.nid.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'subscriber_count' => array(
+        'description' => 'The count of subscribers at the time of sending.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'send_start_timestamp' => array(
+        'description' => 'The timestamp that newsletter sending started.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'send_end_timestamp' => array(
+        'description' => 'The timestamp that the last newsletter was sent.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid'),
+    'foreign keys' => array(
+      'nid' => array(
+        'table' => 'simplenews_newsletter',
+        'columns' => array('nid' => 'nid'),
+      ),
+    ),
+  );
+
   $schema['simplenews_statistics_url'] = array(
     'description' => 'All the URLs for all the newslettter nodes.',
     'fields' => array(
@@ -144,4 +183,50 @@ function simplenews_statistics_uninstall() {
   variable_del('simplenews_statistics_ga_utm_campaign');
   // Delete all variables added by this module.
   variable_del('simplenews_statistics_*');
+}
+
+/**
+ * Create new database table {simplenews_statistics}.
+ */
+function simplenews_statistics_update_7001() {
+  $schema['simplenews_statistics'] = array(
+    'description' => 'Additional fields for {simplenews_newsletter}.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The {simplenews_newsletter}.nid.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'subscriber_count' => array(
+        'description' => 'The count of subscribers at the time of sending.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'send_start_timestamp' => array(
+        'description' => 'The timestamp that newsletter sending started.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'send_end_timestamp' => array(
+        'description' => 'The timestamp that the last newsletter was sent.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid'),
+    'foreign keys' => array(
+      'nid' => array(
+        'table' => 'simplenews_newsletter',
+        'columns' => array('nid' => 'nid'),
+      ),
+    ),
+  );
+
+  db_create_table('simplenews_statistics', $schema['simplenews_statistics']);
 }
