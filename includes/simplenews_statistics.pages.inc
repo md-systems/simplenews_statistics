@@ -169,8 +169,8 @@ function simplenews_statistics_node_tab_page($node) {
 
   $subscriber_count = simplenews_statistics_count_subscribers($nid);
   $sent_count = $newsletter->sent_subscriber_count;
-  $total_opens = simplenews_statistics_get_open_count($nid);
-  $unique_opens = simplenews_statistics_get_open_count($nid, TRUE);
+  $total_opens = simplenews_statistics_count_opens($nid);
+  $unique_opens = simplenews_statistics_count_opens($nid, TRUE);
   $clicks = simplenews_statistics_get_clicks($nid);
 
   $total_clicks = 0;
@@ -183,7 +183,7 @@ function simplenews_statistics_node_tab_page($node) {
     $open_rate = round($unique_opens / $sent_count * 100, 0);
   }
 
-  $unique_clicks = simplenews_statistics_unique_opened_and_clicked_count($nid);
+  $unique_clicks = simplenews_statistics_count_unique_clicks($nid);
   $ctr = 0;
   if ($unique_opens != 0) {
     $ctr = round($unique_clicks / $unique_opens * 100, 0);

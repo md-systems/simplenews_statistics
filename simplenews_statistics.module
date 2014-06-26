@@ -392,7 +392,7 @@ function simplenews_statistics_set_url($url, $nid) {
 /**
  * Get open count for the given node.
  */
-function simplenews_statistics_get_open_count($nid, $distinct = FALSE) {
+function simplenews_statistics_count_opens($nid, $distinct = FALSE) {
   $query = db_select('simplenews_statistics_open', 'sso')
     ->condition('sso.nid', $nid);
 
@@ -432,8 +432,10 @@ function simplenews_statistics_get_clicks($nid) {
   return $url_records;
 }
 
-function simplenews_statistics_unique_opened_and_clicked_count($nid) {
-  // Number of unique subscribers who have opened a link.
+/**
+ * Counts the number of unique subscribers who have opened a link.
+ */
+function simplenews_statistics_count_unique_clicks($nid) {
   $query = db_select('simplenews_statistics_click', 'ssc')
     ->fields('ssc', array('snid'))
     ->condition('ssu.nid', $nid);

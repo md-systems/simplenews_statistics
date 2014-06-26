@@ -87,14 +87,17 @@ class simplenews_statistics_handler_opens extends views_handler_field {
     $sent_count = $values->simplenews_newsletter_sent_subscriber_count;
 
     if ($format == 'total') {
-      $open_count = simplenews_statistics_get_open_count($values->nid);
+      $open_count = simplenews_statistics_count_opens($values->nid);
     }
     else {
-      $open_count = simplenews_statistics_get_open_count($values->nid, TRUE);
+      $open_count = simplenews_statistics_count_opens($values->nid, TRUE);
     }
 
     if ($format == 'open_rate' && $sent_count > 0) {
       return round($open_count / $sent_count * 100, $precision) . '%';
+    }
+    elseif ($format == 'open_rate' && $sent_count == 0) {
+      return t('N/A');
     }
 
     return $open_count;
