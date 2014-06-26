@@ -282,8 +282,8 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   }
 
   // Do not replace 'mailto:' links unless it is configured.
-  $track_email_address = variable_get('simplenews_statistics_track_email_address', 1);
-  if ($track_email_address == 0) {
+  $track_mailto = variable_get('simplenews_statistics_track_mailto', 1);
+  if ($track_mailto == 0) {
     if (substr($url, 0, 7) == 'mailto:') {
       return $url;
     }
@@ -414,33 +414,16 @@ function simplenews_statistics_count_subscribers($nid) {
 }
 
 /**
- *  Get URLs with click counts for the given newsletter node.
- */
-function simplenews_statistics_get_clicks($nid) {
-  $url_query = db_select('simplenews_statistics_url', 'ssu')
-    ->fields('ssu', array('urlid', 'url'))
-    ->condition('ssu.nid', $nid);
-  $url_records = $url_query->execute()->fetchAllAssoc('urlid');
-
-  foreach ($url_records as $record) {
-    $query = db_select('simplenews_statistics_click', 'ssc')
-      ->condition('ssc.urlid', $record->urlid);
-
-    $record->clicks = $query->countQuery()->execute()->fetchField();
-  }
-
-  return $url_records;
-}
-
-/**
  * Counts the number of unique subscribers who have opened a link.
  */
-function simplenews_statistics_count_unique_clicks($nid) {
+function simplenews_statistics_count_clicks($nid, $unique = FALSE) {
   $query = db_select('simplenews_statistics_click', 'ssc')
     ->fields('ssc', array('snid'))
     ->condition('ssu.nid', $nid);
   $query->join('simplenews_statistics_url', 'ssu', 'ssu.urlid = ssc.urlid');
-  $query->distinct();
+  if ($unique) {
+    $query->distinct();
+  }
 
   return $query->countQuery()->execute()->fetchField();
 }

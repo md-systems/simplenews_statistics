@@ -154,14 +154,14 @@ function simplenews_statistics_click_page($urlid, $snid) {
   }
 
   // Fallback on any error is to go to the homepage.
+  // @todo: Give some feedback to user and perhaps watchdog.
   drupal_goto();
 }
 
 /**
  * Page callback for simplenews statistics overview.
  *
- * WIP.
- * @todo: How to tie this in to views?
+ * @todo: Replace this with a view.
  */
 function simplenews_statistics_node_tab_page($node) {
   $nid = $node->nid;
@@ -171,19 +171,14 @@ function simplenews_statistics_node_tab_page($node) {
   $sent_count = $newsletter->sent_subscriber_count;
   $total_opens = simplenews_statistics_count_opens($nid);
   $unique_opens = simplenews_statistics_count_opens($nid, TRUE);
-  $clicks = simplenews_statistics_get_clicks($nid);
-
-  $total_clicks = 0;
-  foreach ($clicks as $click) {
-    $total_clicks += $click->clicks;
-  }
+  $total_clicks = simplenews_statistics_count_clicks($nid);
+  $unique_clicks = simplenews_statistics_count_clicks($nid, TRUE);
 
   $open_rate = 0;
   if ($sent_count != 0) {
     $open_rate = round($unique_opens / $sent_count * 100, 0);
   }
 
-  $unique_clicks = simplenews_statistics_count_unique_clicks($nid);
   $ctr = 0;
   if ($unique_opens != 0) {
     $ctr = round($unique_clicks / $unique_opens * 100, 0);
@@ -194,7 +189,6 @@ function simplenews_statistics_node_tab_page($node) {
     'subscriber_count' => $subscriber_count,
     'total_opens' => $total_opens,
     'unique_opens' => $unique_opens,
-    'clicks' => $clicks,
     'total_clicks' => $total_clicks,
     'open_rate' => $open_rate,
     'ctr' => $ctr,

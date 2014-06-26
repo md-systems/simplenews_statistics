@@ -15,13 +15,6 @@
  *     Total number of times this newsletter has been opened.
  *   ['unique_opens'] (int)
  *     Unique number of times this newsletter has been opened.
- *   ['clicks'] (array of objects)
- *     ->urlid (int)
- *       The ID assigned to this record.
- *     ->url (string)
- *       The URL of this link.
- *     ->clicks (int)
- *       Number of times this link has been clicked.
  *   ['total_clicks'] (int)
  *     Total number of times all links have been clicked.
  *   ['open_rate'] (float)

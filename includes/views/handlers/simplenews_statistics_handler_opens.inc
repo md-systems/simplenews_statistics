@@ -80,8 +80,6 @@ class simplenews_statistics_handler_opens extends views_handler_field {
    * Renders the field handler.
    */
   function render($values) {
-    //dpm($values);
-    //dpm($this->options);
     $format = $this->options['open_format'];
     $precision = intval($this->options['open_rate_precision']);
     $sent_count = $values->simplenews_newsletter_sent_subscriber_count;

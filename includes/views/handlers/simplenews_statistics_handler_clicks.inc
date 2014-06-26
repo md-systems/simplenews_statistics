@@ -34,7 +34,7 @@ class simplenews_statistics_handler_clicks extends views_handler_field {
   function option_definition() {
     $options = parent::option_definition();
 
-    $options['ctr'] = array('default' => 0);
+    $options['click_format'] = array('default' => 0);
     $options['ctr_precision'] = array('default' => '0');
 
     return $options;
@@ -46,11 +46,16 @@ class simplenews_statistics_handler_clicks extends views_handler_field {
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
-    $form['ctr'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Click-through rate'),
-     '#default_value' => $this->options['ctr'],
-     '#description' => t('Display the click-through rate instead of just a sum of the number of url clicks.'),
+    $form['click_format'] = array(
+      '#type' => 'select',
+      '#title' => t('Display format'),
+      '#options' => array(
+        'total' => t('Total count'),
+        'unique' => t('Unique count'),
+        'ctr' => t('Click-through rate'),
+      ),
+      '#default_value' => $this->options['click_format'],
+      '#description' => t('Select the display format for the click counter.'),
     );
 
     $form['ctr_precision'] = array(
@@ -60,7 +65,7 @@ class simplenews_statistics_handler_clicks extends views_handler_field {
       '#description' => t('Number of decimal places to which the click-through rate should be calculated.'),
       '#states' => array(
         'visible' => array(
-          ':input[name="options[ctr]"]' => array('checked' => TRUE),
+          ':input[name="options[click_format]"]' => array('value' => 'ctr'),
         ),
       ),
     );
@@ -70,24 +75,25 @@ class simplenews_statistics_handler_clicks extends views_handler_field {
    * Renders the field handler.
    */
   function render($values) {
-    $nid = $values->nid;
-    $unique_opens = simplenews_statistics_count_opens($nid, TRUE);
-    $clicks = simplenews_statistics_get_clicks($nid);
-    $total_clicks = 0;
+    $format = $this->options['click_format'];
+    $precision = intval($this->options['ctr_precision']);
+    $unique_opens = simplenews_statistics_count_opens($values->nid, TRUE);
 
-    foreach ($clicks as $click) {
-      $total_clicks += $click->clicks;
+    if ($format == 'total') {
+      $click_count =  simplenews_statistics_count_clicks($values->nid);
+    }
+    else {
+      $click_count = simplenews_statistics_count_clicks($values->nid, TRUE);
     }
 
-    if ($this->options['ctr'] && $unique_opens > 0) {
-      $unique_clicks = simplenews_statistics_count_unique_clicks($nid);
-      return round($unique_clicks / $unique_opens * 100, 0) . '%';
+    if ($format == 'ctr' && $unique_opens > 0) {
+      return round($click_count / $unique_opens * 100, $precision) . '%';
     }
-    elseif ($this->options['ctr'] && $unique_opens == 0) {
+    elseif ($format == 'ctr' && $unique_opens == 0) {
       return t('N/A');
     }
 
-    return $total_clicks;
+    return $click_count;
   }
 
 }
