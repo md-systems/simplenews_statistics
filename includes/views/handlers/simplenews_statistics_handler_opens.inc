@@ -39,8 +39,8 @@ class simplenews_statistics_handler_opens extends views_handler_field {
   function option_definition() {
     $options = parent::option_definition();
 
-    $options['unique'] = array('default' => 0);
-    $options['open_rate'] = array('default' => 0);
+    $options['open_format'] = array('default' => 0);
+    $options['open_rate_precision'] = array('default' => '0');
 
     return $options;
   }
@@ -51,17 +51,28 @@ class simplenews_statistics_handler_opens extends views_handler_field {
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
-    $form['unique'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Unique opens'),
-     '#default_value' => $this->options['unique'],
-     '#description' => t('Only count unique opens. If a subscriber has open the newsletter multiple times only one will be counted.'),
+    $form['open_format'] = array(
+      '#type' => 'select',
+      '#title' => t('Display format'),
+      '#options' => array(
+        'total' => t('Total count'),
+        'unique' => t('Unique count'),
+        'open_rate' => t('Open rate'),
+      ),
+      '#default_value' => $this->options['open_format'],
+      '#description' => t('Select the display format for the open counter.'),
     );
-    $form['open_rate'] = array(
-     '#type' => 'checkbox',
-     '#title' => t('Open rate'),
-     '#default_value' => $this->options['open_rate'],
-     '#description' => t('Calculate the open rate based on the number of emails sent and the unique open count.'),
+
+    $form['open_rate_precision'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Precision'),
+      '#default_value' => $this->options['open_rate_precision'],
+      '#description' => t('Number of decimal places to which the open rate should be calculated.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="options[open_format]"]' => array('value' => 'open_rate'),
+        ),
+      ),
     );
   }
 
@@ -70,22 +81,20 @@ class simplenews_statistics_handler_opens extends views_handler_field {
    */
   function render($values) {
     //dpm($values);
-    //dpm($options);
-    $unique = $this->options['unique'];
-    $open_rate = $this->options['open_rate'];
-    $nid = $values->nid;
+    //dpm($this->options);
+    $format = $this->options['open_format'];
+    $precision = intval($this->options['open_rate_precision']);
     $sent_count = $values->simplenews_newsletter_sent_subscriber_count;
 
-    if ($unique) {
-      $open_count = simplenews_statistics_get_open_count($nid, TRUE);
+    if ($format == 'total') {
+      $open_count = simplenews_statistics_get_open_count($values->nid);
     }
     else {
-      $open_count = simplenews_statistics_get_open_count($nid);
+      $open_count = simplenews_statistics_get_open_count($values->nid, TRUE);
     }
 
-    // @todo: Require unique for this. Make number of decimals configurable.
-    if ($open_rate && $sent_count > 0) {
-      return round($open_count / $sent_count * 100, 0) . '%';
+    if ($format == 'open_rate' && $sent_count > 0) {
+      return round($open_count / $sent_count * 100, $precision) . '%';
     }
 
     return $open_count;
