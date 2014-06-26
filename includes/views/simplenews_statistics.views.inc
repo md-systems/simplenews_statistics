@@ -296,14 +296,6 @@ function simplenews_statistics_views_data() {
   // Views integration for calculations with custom handlers.
   $data['simplenews_statistics']['subscriber_count'] = array(
     'title' => t('Subscriber count'),
-    'help' => t('Calculate the subscriber count. More accurate than the number provided by <em>Simplenews issue: Subscriber count</em>.'),
-    'field' => array(
-      'handler' => 'simplenews_statistics_handler_subscriber_count',
-    ),
-  );
-
-  $data['simplenews_statistics']['subscriber_count'] = array(
-    'title' => t('Subscriber count'),
     'help' => t('Shows current number of subscribers if not yet sent and number of subscribers at time of sending if sent. More accurate than the number provided by <em>Simplenews issue: Subscriber count</em>.'),
     'field' => array(
       'handler' => 'simplenews_statistics_handler_subscribers',
@@ -327,4 +319,14 @@ function simplenews_statistics_views_data() {
   );
 
   return $data;
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function simplenews_statistics_views_data_alter(&$data) {
+  // Modify the title and description to more accurately represent the data
+  // stored in this field. @todo: Submit a patch to simplenews for this.
+  $data['simplenews_newsletter']['sent_subscriber_count']['title'] = t('Sent count');
+  $data['simplenews_newsletter']['sent_subscriber_count']['help'] = t('The number of newsletter copies that have been sent to subscribers.');
 }

@@ -14,9 +14,14 @@ class simplenews_statistics_handler_opens extends views_handler_field {
    */
   function construct() {
     parent::construct();
+
     $this->additional_fields['nid'] = array(
       'table' => 'node',
       'field' => 'nid',
+    );
+    $this->additional_fields['sent_subscriber_count'] = array(
+      'table' => 'simplenews_newsletter',
+      'field' => 'sent_subscriber_count',
     );
   }
 
@@ -34,8 +39,8 @@ class simplenews_statistics_handler_opens extends views_handler_field {
   function option_definition() {
     $options = parent::option_definition();
 
-    //$options['unique'] = array('default' => '');
-    //$options['open_rate'] = array('default' => '');
+    $options['unique'] = array('default' => 0);
+    $options['open_rate'] = array('default' => 0);
 
     return $options;
   }
@@ -46,37 +51,44 @@ class simplenews_statistics_handler_opens extends views_handler_field {
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
-    //$form['unique'] = array(
-    //  '#type' => 'checkbox',
-    //  '#title' => t('Unique'),
-    //  '#default_value' => $this->options['unique'],
-    //  '#description' => t('Some description.'),
-    //  '#weight' => -10,
-    //);
+    $form['unique'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Unique opens'),
+     '#default_value' => $this->options['unique'],
+     '#description' => t('Only count unique opens. If a subscriber has open the newsletter multiple times only one will be counted.'),
+    );
+    $form['open_rate'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Open rate'),
+     '#default_value' => $this->options['open_rate'],
+     '#description' => t('Calculate the open rate based on the number of emails sent and the unique open count.'),
+    );
   }
 
   /**
    * Renders the field handler.
    */
   function render($values) {
-    // $this->options.
-
+    //dpm($values);
+    //dpm($options);
+    $unique = $this->options['unique'];
+    $open_rate = $this->options['open_rate'];
     $nid = $values->nid;
-    // @todo: Require this as a field.
-    $newsletter = simplenews_newsletter_load($nid);
+    $sent_count = $values->simplenews_newsletter_sent_subscriber_count;
 
-    $sent_count = $newsletter->sent_subscriber_count;
-    $total_opens = simplenews_statistics_get_open_count($nid);
-    // @todo: Make it possible to return this.
-    $unique_opens = simplenews_statistics_get_open_count($nid, TRUE);
-
-    // @todo: Make it possible to return this.
-    $open_rate = 0;
-    if ($sent_count != 0) {
-      $open_rate = round($unique_opens / $sent_count * 100, 0);
+    if ($unique) {
+      $open_count = simplenews_statistics_get_open_count($nid, TRUE);
+    }
+    else {
+      $open_count = simplenews_statistics_get_open_count($nid);
     }
 
-    return $total_opens;
+    // @todo: Require unique for this. Make number of decimals configurable.
+    if ($open_rate && $sent_count > 0) {
+      return round($open_count / $sent_count * 100, 0) . '%';
+    }
+
+    return $open_count;
   }
 
 }
