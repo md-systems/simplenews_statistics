@@ -300,6 +300,15 @@ function simplenews_statistics_views_data() {
     'field' => array(
       'handler' => 'simplenews_statistics_handler_subscribers',
     ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
   );
 
   $data['simplenews_statistics']['open_count'] = array(
