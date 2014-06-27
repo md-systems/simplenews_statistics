@@ -10,6 +10,129 @@
  */
 function simplenews_statistics_views_default_views() {
   /**
+   * Simplenews Statistics Overview view.
+   */
+  $view = new view();
+  $view->name = 'simplenews_statistics_overview';
+  $view->description = 'Shows the statistical overview for a newsletter.';
+  $view->tag = 'simplenews_statistics';
+  $view->base_table = 'node';
+  $view->human_name = 'Simplenews Statistics Overview';
+  $view->core = 7;
+  $view->api_version = '3.0';
+  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+
+  /* Display: Master */
+  $handler = $view->new_display('default', 'Master', 'default');
+  $handler->display->display_options['title'] = 'Simplenews Statistics Overview';
+  $handler->display->display_options['use_more_always'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'perm';
+  $handler->display->display_options['access']['perm'] = 'view newsletter statistics';
+  $handler->display->display_options['cache']['type'] = 'none';
+  $handler->display->display_options['query']['type'] = 'views_query';
+  $handler->display->display_options['exposed_form']['type'] = 'basic';
+  $handler->display->display_options['pager']['type'] = 'none';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['style_plugin'] = 'default';
+  $handler->display->display_options['row_plugin'] = 'fields';
+  /* Field: Simplenews Statistics: Subscriber count */
+  $handler->display->display_options['fields']['subscriber_count']['id'] = 'subscriber_count';
+  $handler->display->display_options['fields']['subscriber_count']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['subscriber_count']['field'] = 'subscriber_count';
+  $handler->display->display_options['fields']['subscriber_count']['label'] = 'Subscribers';
+  /* Field: Simplenews issue: Sent count */
+  $handler->display->display_options['fields']['sent_subscriber_count']['id'] = 'sent_subscriber_count';
+  $handler->display->display_options['fields']['sent_subscriber_count']['table'] = 'simplenews_newsletter';
+  $handler->display->display_options['fields']['sent_subscriber_count']['field'] = 'sent_subscriber_count';
+  $handler->display->display_options['fields']['sent_subscriber_count']['label'] = 'Emails sent';
+  /* Field: Simplenews Statistics: Open count */
+  $handler->display->display_options['fields']['open_count']['id'] = 'open_count';
+  $handler->display->display_options['fields']['open_count']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['open_count']['field'] = 'open_count';
+  $handler->display->display_options['fields']['open_count']['label'] = 'Total opens';
+  $handler->display->display_options['fields']['open_count']['open_format'] = 'total';
+  /* Field: Simplenews Statistics: Open count */
+  $handler->display->display_options['fields']['open_count_1']['id'] = 'open_count_1';
+  $handler->display->display_options['fields']['open_count_1']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['open_count_1']['field'] = 'open_count';
+  $handler->display->display_options['fields']['open_count_1']['label'] = 'Unique opens';
+  $handler->display->display_options['fields']['open_count_1']['open_format'] = 'unique';
+  /* Field: Simplenews Statistics: Open count */
+  $handler->display->display_options['fields']['open_count_2']['id'] = 'open_count_2';
+  $handler->display->display_options['fields']['open_count_2']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['open_count_2']['field'] = 'open_count';
+  $handler->display->display_options['fields']['open_count_2']['label'] = 'Open rate';
+  $handler->display->display_options['fields']['open_count_2']['open_format'] = 'open_rate';
+  /* Field: Simplenews Statistics: Click count */
+  $handler->display->display_options['fields']['click_count']['id'] = 'click_count';
+  $handler->display->display_options['fields']['click_count']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['click_count']['field'] = 'click_count';
+  $handler->display->display_options['fields']['click_count']['label'] = 'Total clicks';
+  $handler->display->display_options['fields']['click_count']['click_format'] = 'total';
+  /* Field: Simplenews Statistics: Click count */
+  $handler->display->display_options['fields']['click_count_1']['id'] = 'click_count_1';
+  $handler->display->display_options['fields']['click_count_1']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['click_count_1']['field'] = 'click_count';
+  $handler->display->display_options['fields']['click_count_1']['label'] = 'Unique clicks';
+  $handler->display->display_options['fields']['click_count_1']['click_format'] = 'unique';
+  /* Field: Simplenews Statistics: Click count */
+  $handler->display->display_options['fields']['click_count_2']['id'] = 'click_count_2';
+  $handler->display->display_options['fields']['click_count_2']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['click_count_2']['field'] = 'click_count';
+  $handler->display->display_options['fields']['click_count_2']['label'] = 'CTR';
+  $handler->display->display_options['fields']['click_count_2']['click_format'] = 'ctr';
+  /* Sort criterion: Content: Post date */
+  $handler->display->display_options['sorts']['created']['id'] = 'created';
+  $handler->display->display_options['sorts']['created']['table'] = 'node';
+  $handler->display->display_options['sorts']['created']['field'] = 'created';
+  $handler->display->display_options['sorts']['created']['order'] = 'DESC';
+  /* Contextual filter: Content: Nid */
+  $handler->display->display_options['arguments']['nid']['id'] = 'nid';
+  $handler->display->display_options['arguments']['nid']['table'] = 'node';
+  $handler->display->display_options['arguments']['nid']['field'] = 'nid';
+  $handler->display->display_options['arguments']['nid']['default_action'] = 'default';
+  $handler->display->display_options['arguments']['nid']['default_argument_type'] = 'node';
+  $handler->display->display_options['arguments']['nid']['summary']['number_of_records'] = '0';
+  $handler->display->display_options['arguments']['nid']['summary']['format'] = 'default_summary';
+  $handler->display->display_options['arguments']['nid']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['arguments']['nid']['specify_validation'] = TRUE;
+  $handler->display->display_options['arguments']['nid']['validate']['type'] = 'node';
+  $handler->display->display_options['arguments']['nid']['validate_options']['types'] = array(
+    'simplenews' => 'simplenews',
+  );
+  $handler->display->display_options['arguments']['nid']['validate_options']['access'] = TRUE;
+  $handler->display->display_options['arguments']['nid']['validate']['fail'] = 'access denied';
+  /* Filter criterion: Content: Published */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'node';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = 1;
+  $handler->display->display_options['filters']['status']['group'] = 1;
+  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+  /* Filter criterion: Content: Type */
+  $handler->display->display_options['filters']['type']['id'] = 'type';
+  $handler->display->display_options['filters']['type']['table'] = 'node';
+  $handler->display->display_options['filters']['type']['field'] = 'type';
+  $handler->display->display_options['filters']['type']['value'] = array(
+    'simplenews' => 'simplenews',
+  );
+
+  /* Display: Page */
+  $handler = $view->new_display('page', 'Page', 'page');
+  $handler->display->display_options['path'] = 'node/%/simplenews_statistics/summary';
+  $handler->display->display_options['menu']['type'] = 'tab';
+  $handler->display->display_options['menu']['title'] = 'Newsletter Overview';
+  $handler->display->display_options['menu']['description'] = 'Simplenews Statistics overview';
+  $handler->display->display_options['menu']['weight'] = '-1';
+  $handler->display->display_options['menu']['name'] = 'devel';
+  $handler->display->display_options['menu']['context'] = 0;
+  $handler->display->display_options['menu']['context_only_inline'] = 0;
+  $handler->display->display_options['tab_options']['weight'] = '0';
+
+  // Add to default views return array.
+  $views[$view->name] = $view;
+
+  /**
    * Simplenews Statistics Clicks view.
    */
   $view = new view();
@@ -31,6 +154,13 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['exposed_form']['type'] = 'basic';
   $handler->display->display_options['pager']['type'] = 'full';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '25';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['pager']['options']['id'] = '0';
+  $handler->display->display_options['pager']['options']['quantity'] = '9';
+  $handler->display->display_options['pager']['options']['expose']['items_per_page'] = TRUE;
+  $handler->display->display_options['pager']['options']['expose']['items_per_page_options'] = '10, 25, 50, 100, 500, 1000';
+  $handler->display->display_options['pager']['options']['expose']['items_per_page_options_all'] = TRUE;
   $handler->display->display_options['style_plugin'] = 'table';
   $handler->display->display_options['style_options']['columns'] = array(
     'cid' => 'cid',
@@ -45,6 +175,13 @@ function simplenews_statistics_views_default_views() {
       'empty_column' => 0,
     ),
   );
+  /* Header: Global: Result summary */
+  $handler->display->display_options['header']['result']['id'] = 'result';
+  $handler->display->display_options['header']['result']['table'] = 'views';
+  $handler->display->display_options['header']['result']['field'] = 'result';
+  $handler->display->display_options['header']['result']['label'] = 'Intro';
+  $handler->display->display_options['header']['result']['empty'] = TRUE;
+  $handler->display->display_options['header']['result']['content'] = 'Links in this newsletter have been clicked @total times.';
   /* No results behavior: Global: Text area */
   $handler->display->display_options['empty']['area']['id'] = 'area';
   $handler->display->display_options['empty']['area']['table'] = 'views';
@@ -63,23 +200,26 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['relationships']['snid']['table'] = 'simplenews_statistics_click';
   $handler->display->display_options['relationships']['snid']['field'] = 'snid';
   $handler->display->display_options['relationships']['snid']['required'] = TRUE;
+  /* Field: Simplenews Statistics: URL */
+  $handler->display->display_options['fields']['url']['id'] = 'url';
+  $handler->display->display_options['fields']['url']['table'] = 'simplenews_statistics_url';
+  $handler->display->display_options['fields']['url']['field'] = 'url';
+  $handler->display->display_options['fields']['url']['relationship'] = 'urlid';
+  $handler->display->display_options['fields']['url']['display_as_link'] = FALSE;
   /* Field: Simplenews subscriber: Subscriber */
   $handler->display->display_options['fields']['mail']['id'] = 'mail';
   $handler->display->display_options['fields']['mail']['table'] = 'simplenews_subscriber';
   $handler->display->display_options['fields']['mail']['field'] = 'mail';
   $handler->display->display_options['fields']['mail']['relationship'] = 'snid';
   $handler->display->display_options['fields']['mail']['label'] = 'E-mail';
-  /* Field: Simplenews Statistics: URL */
-  $handler->display->display_options['fields']['url']['id'] = 'url';
-  $handler->display->display_options['fields']['url']['table'] = 'simplenews_statistics_url';
-  $handler->display->display_options['fields']['url']['field'] = 'url';
-  $handler->display->display_options['fields']['url']['relationship'] = 'urlid';
-  /* Field: Simplenews Statistics: Click timestamp */
+  /* Field: Simplenews Statistics: Timestamp » Click */
   $handler->display->display_options['fields']['timestamp']['id'] = 'timestamp';
   $handler->display->display_options['fields']['timestamp']['table'] = 'simplenews_statistics_click';
   $handler->display->display_options['fields']['timestamp']['field'] = 'timestamp';
-  $handler->display->display_options['fields']['timestamp']['date_format'] = 'long';
-  /* Sort criterion: Simplenews Statistics: Click timestamp */
+  $handler->display->display_options['fields']['timestamp']['label'] = 'Date clicked';
+  $handler->display->display_options['fields']['timestamp']['date_format'] = 'medium';
+  $handler->display->display_options['fields']['timestamp']['second_date_format'] = 'long';
+  /* Sort criterion: Simplenews Statistics: Timestamp » Click */
   $handler->display->display_options['sorts']['timestamp']['id'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['table'] = 'simplenews_statistics_click';
   $handler->display->display_options['sorts']['timestamp']['field'] = 'timestamp';
@@ -94,14 +234,21 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['arguments']['nid']['summary']['number_of_records'] = '0';
   $handler->display->display_options['arguments']['nid']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['nid']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['arguments']['nid']['specify_validation'] = TRUE;
+  $handler->display->display_options['arguments']['nid']['validate']['type'] = 'node';
+  $handler->display->display_options['arguments']['nid']['validate_options']['types'] = array(
+    'simplenews' => 'simplenews',
+  );
+  $handler->display->display_options['arguments']['nid']['validate_options']['access'] = TRUE;
+  $handler->display->display_options['arguments']['nid']['validate']['fail'] = 'access denied';
 
   /* Display: Simplenews Statistics Clicks */
   $handler = $view->new_display('page', 'Simplenews Statistics Clicks', 'page');
   $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
   $handler->display->display_options['path'] = 'node/%/simplenews_statistics/clicks';
   $handler->display->display_options['menu']['type'] = 'tab';
-  $handler->display->display_options['menu']['title'] = 'Clicks';
-  $handler->display->display_options['menu']['weight'] = '0';
+  $handler->display->display_options['menu']['title'] = 'Newsletter Clicks';
+  $handler->display->display_options['menu']['weight'] = '1';
   $handler->display->display_options['menu']['context'] = 0;
   $handler->display->display_options['menu']['context_only_inline'] = 0;
   $handler->display->display_options['tab_options']['type'] = 'tab';
@@ -133,7 +280,13 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['exposed_form']['type'] = 'basic';
   $handler->display->display_options['pager']['type'] = 'full';
-  $handler->display->display_options['pager']['options']['items_per_page'] = '10';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '25';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['pager']['options']['id'] = '0';
+  $handler->display->display_options['pager']['options']['quantity'] = '9';
+  $handler->display->display_options['pager']['options']['expose']['items_per_page'] = TRUE;
+  $handler->display->display_options['pager']['options']['expose']['items_per_page_options'] = '10, 25, 50, 100, 500, 1000';
+  $handler->display->display_options['pager']['options']['expose']['items_per_page_options_all'] = TRUE;
   $handler->display->display_options['style_plugin'] = 'table';
   /* Header: Global: Result summary */
   $handler->display->display_options['header']['result']['id'] = 'result';
@@ -149,7 +302,7 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['empty']['area']['empty'] = TRUE;
   $handler->display->display_options['empty']['area']['content'] = 'There are no open statistics available for this newsletter.';
   $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
-  /* Relationship: Simplenews Statistics open: Subscriber */
+  /* Relationship: Simplenews Statistics: Subscriber */
   $handler->display->display_options['relationships']['snid']['id'] = 'snid';
   $handler->display->display_options['relationships']['snid']['table'] = 'simplenews_statistics_open';
   $handler->display->display_options['relationships']['snid']['field'] = 'snid';
@@ -159,37 +312,39 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['fields']['mail']['field'] = 'mail';
   $handler->display->display_options['fields']['mail']['relationship'] = 'snid';
   $handler->display->display_options['fields']['mail']['label'] = 'E-mail';
-  /* Field: Simplenews Statistics open: Timestamp */
+  /* Field: Simplenews Statistics: Timestamp » Open */
   $handler->display->display_options['fields']['timestamp']['id'] = 'timestamp';
   $handler->display->display_options['fields']['timestamp']['table'] = 'simplenews_statistics_open';
   $handler->display->display_options['fields']['timestamp']['field'] = 'timestamp';
   $handler->display->display_options['fields']['timestamp']['date_format'] = 'long';
   $handler->display->display_options['fields']['timestamp']['second_date_format'] = 'long';
-  /* Sort criterion: Simplenews Statistics open: Timestamp */
+  /* Sort criterion: Simplenews Statistics: Timestamp » Open */
   $handler->display->display_options['sorts']['timestamp']['id'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['table'] = 'simplenews_statistics_open';
   $handler->display->display_options['sorts']['timestamp']['field'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['order'] = 'DESC';
-  /* Contextual filter: Simplenews Statistics open: Nid */
+  /* Contextual filter: Simplenews Statistics: Node ID */
   $handler->display->display_options['arguments']['nid']['id'] = 'nid';
   $handler->display->display_options['arguments']['nid']['table'] = 'simplenews_statistics_open';
   $handler->display->display_options['arguments']['nid']['field'] = 'nid';
-  $handler->display->display_options['arguments']['nid']['default_action'] = 'default';
+  $handler->display->display_options['arguments']['nid']['default_action'] = 'access denied';
   $handler->display->display_options['arguments']['nid']['default_argument_type'] = 'node';
   $handler->display->display_options['arguments']['nid']['summary']['number_of_records'] = '0';
   $handler->display->display_options['arguments']['nid']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['nid']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['arguments']['nid']['specify_validation'] = TRUE;
   $handler->display->display_options['arguments']['nid']['validate']['type'] = 'node';
   $handler->display->display_options['arguments']['nid']['validate_options']['types'] = array(
     'simplenews' => 'simplenews',
   );
+  $handler->display->display_options['arguments']['nid']['validate_options']['access'] = TRUE;
   $handler->display->display_options['arguments']['nid']['validate']['fail'] = 'empty';
 
   /* Display: Simplenews Statistics Opens */
   $handler = $view->new_display('page', 'Simplenews Statistics Opens', 'page');
   $handler->display->display_options['path'] = 'node/%/simplenews_statistics/opens';
   $handler->display->display_options['menu']['type'] = 'tab';
-  $handler->display->display_options['menu']['title'] = 'Opens';
+  $handler->display->display_options['menu']['title'] = 'Newsletter Opens';
   $handler->display->display_options['menu']['weight'] = '0';
   $handler->display->display_options['menu']['context'] = 0;
   $handler->display->display_options['menu']['context_only_inline'] = 0;
@@ -344,7 +499,7 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['fields']['send_start_timestamp']['label'] = 'Sent Date';
   $handler->display->display_options['fields']['send_start_timestamp']['date_format'] = 'medium';
   $handler->display->display_options['fields']['send_start_timestamp']['second_date_format'] = 'long';
-/* Field: Simplenews Statistics: Open count */
+  /* Field: Simplenews Statistics: Open count */
   $handler->display->display_options['fields']['open_count_1']['id'] = 'open_count_1';
   $handler->display->display_options['fields']['open_count_1']['table'] = 'simplenews_statistics';
   $handler->display->display_options['fields']['open_count_1']['field'] = 'open_count';

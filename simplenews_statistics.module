@@ -28,20 +28,19 @@ function simplenews_statistics_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK, // Visible once submodules are enabled.
   );
   // Statistics.
+  $items['admin/content/simplenews/newsletters'] = array(
+    'title' => 'Newsletters',
+    'type' => MENU_DEFAULT_LOCAL_TASK, // Default tab for content overview.
+    'weight' => -1,
+  );
   $items['node/%node/simplenews_statistics'] = array(
     'title' => 'Statistics',
     'type' => MENU_LOCAL_TASK,
-    'page callback' => 'simplenews_statistics_node_tab_page',
-    'page arguments' => array(1),
+    'page callback' => 'views_embed_view',
+    'page arguments' => array('simplenews_statistics_overview'),
     'access arguments' => array('view newsletter statistics', 1),
     'access callback' => 'simplenews_statistics_node_tab_access',
-    'file' => 'includes/simplenews_statistics.pages.inc',
     'weight' => 1,
-  );
-  $items['admin/content/simplenews/newsletters'] = array(
-    'title' => 'Newsletters',
-    'weight' => -15,
-    'type' => MENU_DEFAULT_LOCAL_TASK, // Default tab for content overview.
   );
   // Tracking.
   $items['track/open/%/%'] = array(
@@ -63,52 +62,10 @@ function simplenews_statistics_menu() {
 }
 
 /**
- * Access callback for statistics page.
+ * Access callback for statistics landing page.
  */
 function simplenews_statistics_node_tab_access($permission, $node) {
   return simplenews_check_node_types($node->type) && user_access($permission);
-}
-
-/**
- * Implements hook_menu_alter().
- */
-function simplenews_statistics_menu_alter(&$items) {
-  // Set an access callback function for simplenews statistics' default views.
-  $items['node/%/simplenews_statistics/opens']['access callback'] = 'simplenews_statistics_view_tab_access';
-  $items['node/%/simplenews_statistics/clicks']['access callback'] = 'simplenews_statistics_view_tab_access';
-}
-
-/**
- * Access callback used by the statistics view page displays to determine if
- * the local task menu tabs should be displayed.
- */
-function simplenews_statistics_view_tab_access($options = array()) {
-  // Check if user has permission to view this display.
-  $access_callback = $options[0];
-  $access_arguments = $options[1];
-  $access = call_user_func_array($access_callback, $access_arguments);
-
-  // Show statistics tab only if the node type is 'simplenews'.
-  $node = node_load(arg(1));
-  if ($node && $node->type == 'simplenews' && $access) {
-    return TRUE;
-  }
-
-  return FALSE;
-}
-
-/**
- * Implements hook_module_implements_alter().
- */
-function simplenews_statistics_module_implements_alter(&$implementations, $hook) {
-  // When the implementations of hook_menu_alter are called, we need this module
-  // to be called after views.
-  if ($hook == 'menu_alter') {
-    if (isset($implementations['simplenews_statistics'])) {
-      unset($implementations['simplenews_statistics']);
-      $implementations['simplenews_statistics'] = FALSE;
-    }
-  }
 }
 
 /**
@@ -164,19 +121,6 @@ function simplenews_statistics_views_api() {
   return array(
     'api' => '3.0',
     'path' => drupal_get_path('module', 'simplenews_statistics') . '/includes/views',
-  );
-}
-
-/**
- * Implements hook_theme().
- */
-function simplenews_statistics_theme() {
-  return array(
-    'simplenews_statistics' => array(
-      'variables' => array('statistics' => NULL),
-      'template' => 'simplenews-statistics',
-      'path' => drupal_get_path('module', 'simplenews_statistics') . '/theme',
-    ),
   );
 }
 
