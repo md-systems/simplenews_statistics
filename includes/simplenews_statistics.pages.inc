@@ -9,20 +9,21 @@
  * Check and log newsletter opens.
  */
 function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
-  // Call possible decoders for the snid in modules implementing the hook.
+  // Call possible decoders for nid & snid in modules implementing the hook.
   // Modules implementing this hook should validate this input themself because
   // we can not know what kind of string they will generate.
-  $hook = 'simplenews_statistics_decode_snid';
+  $hook = 'simplenews_statistics_decode';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
-      $snid = $function($snid);
+      $nid = $function($nid, 'nid');
+      $snid = $function($snid, 'snid');
     }
   }
 
-  // Once decoded properly we can know for sure that the $snid is numeric.
-  if (!is_numeric($snid)) {
-    watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter.');
+  // Once decoded properly we can know for sure that nid & snid are numeric.
+  if (!is_numeric($nid) || !is_numeric($snid)) {
+    watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter(s).');
   }
   else {
     $subscriber = simplenews_subscriber_load($snid);
@@ -55,24 +56,17 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
  * Check and log newsletter URL clicks.
  */
 function simplenews_statistics_click_page($urlid, $snid) {
-  // Call possible decoders for the urlid in modules implementing the hook.
-  $hook = 'simplenews_statistics_decode_urlid';
+  // Call possible decoders for urlid & snid in modules implementing the hook.
+  $hook = 'simplenews_statistics_decode';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
-      $urlid = $function($urlid);
-    }
-  }
-  // Call possible decoders for the snid in modules implementing the hook.
-  $hook = 'simplenews_statistics_decode_snid';
-  foreach (module_implements($hook) as $module) {
-    $function = $module . '_' . $hook;
-    if (function_exists($function)) {
-      $snid = $function($snid);
+      $urlid = $function($urlid, 'urlid');
+      $snid = $function($snid, 'snid');
     }
   }
 
-  // Once decoded properly we can know for sure that the $snid and $urlid are
+  // Once decoded properly we can know for sure that the $urlid and $snid are
   // numeric. Fallback on any error is to go to the homepage.
   if (!is_numeric($urlid) || !is_numeric($snid)) {
     watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');

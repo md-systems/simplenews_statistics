@@ -214,12 +214,13 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
     }
   }
   else {
-    // Call possible encoders for the snid in modules implementing the hook.
-    $hook = 'simplenews_statistics_encode_snid';
+    // Call possible encoders for snid & nid in modules implementing the hook.
+    $hook = 'simplenews_statistics_encode';
     foreach (module_implements($hook) as $module) {
       $function = $module . '_' . $hook;
       if (function_exists($function)) {
-        $snid = $function($snid);
+        $nid = $function($nid, 'nid');
+        $snid = $function($snid, 'snid');
       }
     }
     $body .= '<img src="' . url('track/open/' . $nid . '/' . $snid, array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
@@ -256,20 +257,13 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     $url_record = simplenews_statistics_set_url($url, $nid);
   }
 
-  // Call possible encoders for the urlid in modules implementing the hook.
-  $hook = 'simplenews_statistics_encode_urlid';
+  // Call possible encoders for urlid & snid in modules implementing the hook.
+  $hook = 'simplenews_statistics_encode';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
-      $url_record->urlid = $function($url_record->urlid);
-    }
-  }
-  // Call possible encoders for the snid in modules implementing the hook.
-  $hook = 'simplenews_statistics_encode_snid';
-  foreach (module_implements($hook) as $module) {
-    $function = $module . '_' . $hook;
-    if (function_exists($function)) {
-      $snid = $function($snid);
+      $url_record->urlid = $function($url_record->urlid, 'urlid');
+      $snid = $function($snid, 'snid');
     }
   }
 

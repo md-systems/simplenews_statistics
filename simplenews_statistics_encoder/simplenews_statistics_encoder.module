@@ -45,41 +45,21 @@ function simplenews_statistics_encoder_permission() {
 }
 
 /**
- * Implements hook_simplenews_statistics_decode_snid().
+ * Implements hook_simplenews_statistics_encode().
  */
-function simplenews_statistics_encoder_simplenews_statistics_decode_snid($snid) {
-  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  $decoded = simplenews_statistics_encoder_decode($snid);
+function simplenews_statistics_encoder_simplenews_statistics_encode($id, $key) {
+  module_load_include('inc', 'simplenews_statistics_encoder', 'encoder');
   $salt = variable_get('simplenews_statistics_encoder_salt', 0);
-  return $decoded - $salt;
-}
-
-/**
- * Implements hook_simplenews_statistics_decode_urlid().
- */
-function simplenews_statistics_encoder_simplenews_statistics_decode_urlid($urlid) {
-  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  $decoded = simplenews_statistics_encoder_decode($urlid);
-  $salt = variable_get('simplenews_statistics_encoder_salt', 0);
-  return $decoded - $salt;
-}
-
-/**
- * Implements hook_simplenews_statistics_encode_snid().
- */
-function simplenews_statistics_encoder_simplenews_statistics_encode_snid($snid) {
-  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
-  $salt = variable_get('simplenews_statistics_encoder_salt', 0);
-  $salted = $snid + $salt;
+  $salted = $id + $salt;
   return simplenews_statistics_encoder_encode($salted);
 }
 
 /**
- * Implements hook_simplenews_statistics_encode_urlid().
+ * Implements hook_simplenews_statistics_decode().
  */
-function simplenews_statistics_encoder_simplenews_statistics_encode_urlid($urlid) {
-  require_once drupal_get_path('module', 'simplenews_statistics_encoder') . '/encoder.inc';
+function simplenews_statistics_encoder_simplenews_statistics_decode($id, $key) {
+  module_load_include('inc', 'simplenews_statistics_encoder', 'encoder');
+  $decoded = simplenews_statistics_encoder_decode($id);
   $salt = variable_get('simplenews_statistics_encoder_salt', 0);
-  $salted = $urlid + $salt;
-  return simplenews_statistics_encoder_encode($salted);
+  return $decoded - $salt;
 }
