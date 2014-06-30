@@ -87,10 +87,8 @@ function simplenews_statistics_click_page($urlid, $snid) {
     ->condition('urlid', $urlid);
   $url_record = $query->execute()->fetchObject();
 
-  $nid = $url_record->nid;
-
   $subscriber = simplenews_subscriber_load($snid);
-  if ($url_record) {
+  if (!empty($subscriber) && $subscriber->snid == $snid && isset($url_record)) {
     $click_record = new stdClass();
     $click_record->urlid = $urlid;
     $click_record->snid = $snid;
@@ -103,7 +101,7 @@ function simplenews_statistics_click_page($urlid, $snid) {
     $query->condition('snid', $snid);
     $num_rows = $query->countQuery()->execute()->fetchField();
     if ($num_rows == 0) {
-      simplenews_statistics_open_page($nid, $snid, FALSE);
+      simplenews_statistics_open_page($url_record->nid, $snid, FALSE);
     }
   }
 
