@@ -92,6 +92,7 @@ function simplenews_statistics_permission() {
 function simplenews_statistics_node_delete($node) {
   if ($node->type == 'simplenews') {
     // Delete all click and open records for this newsletter.
+    // @todo: Combine click removal into a single query with a join.
     $url_query = db_select('simplenews_statistics_url', 'ssu')
       ->fields('ssu', array('urlid'))
       ->condition('ssu.nid', $node->nid);
@@ -108,8 +109,7 @@ function simplenews_statistics_node_delete($node) {
     db_delete('simplenews_statistics_open')
       ->condition('nid', $node->nid)
       ->execute();
-    // Keep the URL records so links in the newsletter will still be clickable.
-    // @todo Delete clicks and opens per subscriber when they are deleted.
+    // @todo: Delete clicks and opens per subscriber when they are "deleted".
   }
 }
 
@@ -138,6 +138,12 @@ function simplenews_statistics_mail_alter(&$message) {
     // During testing the snid might be unset. Use 0 in that case. This will
     // make sure that the link will still work but won't be counted.
     $snid = isset($subscriber->snid) ? $subscriber->snid : 0;
+
+    // Optionally ignore snid tracking for test sends.
+    $track_test = variable_get('simplenews_statistics_track_test', 0);
+    if ($track_test == 0 && $message['id'] == 'simplenews_test') {
+      $snid = 0;
+    }
 
     // Parse body.
     _simplenews_statistics_parse_links($message['body'], $node->nid, $snid);

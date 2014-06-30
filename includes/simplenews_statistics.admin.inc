@@ -14,15 +14,14 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
     '#title' => t('General Settings'),
   );
 
-  // @todo: This setting isn't used.
-  $form['simplenews_statistics']['logging'] = array(
+  $form['simplenews_statistics']['simplenews_statistics_track_test'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Enable logging'),
-    '#description' => t('Enable logging of links replacement.'),
-    '#default_value' => variable_get('simplenews_statistics_logging', 1),
+    '#title' => t('Track newsletter test sends'),
+    '#description' => t('Disabling this will stop the tracking of opens and clicks for test emails. Links replacements will still be done for those test sends, but no statistics will be recorded.'),
+    '#default_value' => variable_get('simplenews_statistics_track_test', 0),
   );
 
-  $form['simplenews_statistics']['track_email_address'] = array(
+  $form['simplenews_statistics']['simplenews_statistics_track_mailto'] = array(
     '#type' => 'checkbox',
     '#title' => t('Track mailto links'),
     '#description' => t('In some cases tracking clicks on email addresses wil result in a blank browser window. Disabling this options prevents that.'),
