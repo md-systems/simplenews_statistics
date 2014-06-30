@@ -14,6 +14,9 @@ function simplenews_statistics_encoder_install() {
   $max = rand($min, 1000);
   $salt = rand($min, $max);
   variable_set('simplenews_statistics_encoder_salt', $salt);
+  // Generate a 32 character identifier (a 128 bit hex number).
+  $key = md5(uniqid(rand()));
+  variable_set('simplenews_statistics_encoder_private_key', $key);
 }
 
 /**
