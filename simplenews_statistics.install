@@ -40,6 +40,30 @@ function simplenews_statistics_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'archived' => array(
+        'description' => '0 = active; 1 = archived.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'unique_opens' => array(
+        'description' => 'Unique open count if newsletter is archived.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
+      ),
+      'total_opens' => array(
+        'description' => 'Total open count if newsletter is archived.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
+      ),
+      'unique_clicks' => array(
+        'description' => 'Unique click count if newsletter is archived.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
+      ),
     ),
     'primary key' => array('nid'),
     'foreign keys' => array(
@@ -68,6 +92,14 @@ function simplenews_statistics_schema() {
         'description' => 'The original URL of a link in a newsletter.',
         'type' => 'text',
         'size' => 'normal',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'click_count' => array(
+        'description' => 'Aggregated click count if newsletter is archived.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
       ),
     ),
     'primary key' => array('urlid'),
@@ -177,10 +209,6 @@ function simplenews_statistics_schema() {
  * Implements hook_uninstall().
  */
 function simplenews_statistics_uninstall() {
-  // @todo Shouldn't these be removed from the ga submodule?
-  variable_del('simplenews_statistics_ga_utm_source');
-  variable_del('simplenews_statistics_ga_utm_medium');
-  variable_del('simplenews_statistics_ga_utm_campaign');
   // Delete all variables added by this module.
   variable_del('simplenews_statistics_*');
 }
@@ -229,4 +257,47 @@ function simplenews_statistics_update_7001() {
   );
 
   db_create_table('simplenews_statistics', $schema['simplenews_statistics']);
+}
+
+/**
+ * Create new fields for storing aggregated totals for archived newsletters.
+ */
+function simplenews_statistics_update_7002() {
+  $fields = array(
+    'archived' => array(
+      'description' => '0 = active; 1 = archived.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    ),
+    'unique_opens' => array(
+      'description' => 'Unique open count if newsletter is archived.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => -1,
+    ),
+    'total_opens' => array(
+      'description' => 'Total open count if newsletter is archived.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => -1,
+    ),
+    'unique_clicks' => array(
+      'description' => 'Unique click count if newsletter is archived.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => -1,
+    ),
+    'click_count' => array(
+      'description' => 'Aggregated click count if newsletter is archived.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => -1,
+    ),
+  );
+  db_add_field('simplenews_statistics', 'archived', $fields['archived']);
+  db_add_field('simplenews_statistics', 'unique_opens', $fields['unique_opens']);
+  db_add_field('simplenews_statistics', 'total_opens', $fields['total_opens']);
+  db_add_field('simplenews_statistics', 'unique_clicks', $fields['unique_clicks']);
+  db_add_field('simplenews_statistics_url', 'click_count', $fields['click_count']);
 }
