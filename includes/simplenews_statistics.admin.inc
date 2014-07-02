@@ -28,5 +28,14 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
     '#default_value' => variable_get('simplenews_statistics_track_mailto', 1),
   );
 
+  $form['simplenews_statistics']['simplenews_statistics_archive_days'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Days to keep open and click records'),
+    '#description' => t('Specify a number of days beyond which the open and click records for newsletters will be deleted. This can help control the growth of the open and click database tables over time. The site cron must be correctly configured. A value of 0 disables this setting.'),
+    '#default_value' => variable_get('simplenews_statistics_archive_days', 0),
+    '#size' => 4,
+    '#maxlength' => 4,
+  );
+
   return system_settings_form($form);
 }

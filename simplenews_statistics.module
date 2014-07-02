@@ -113,6 +113,28 @@ function simplenews_statistics_node_delete($node) {
   }
 }
 
+/**
+ * Implements hook_cron().
+ */
+function simplenews_statistics_cron() {
+  // Delete open and click records after a specified period of time.
+  $days = variable_get('simplenews_statistics_archive_days', 0);
+  if (is_numeric($days) && $days > 0) {
+    // @todo: Archive older newsletters (need new db column).
+    $timestamp = strtotime("-$days days");
+    $opens_deleted = db_delete('simplenews_statistics_open')
+      ->condition('timestamp', $timestamp, '<')
+      ->execute();
+    $clicks_deleted = db_delete('simplenews_statistics_click')
+      ->condition('timestamp', $timestamp, '<')
+      ->execute();
+    // @todo: Delete by newsletter sent timestamp and save aggregated counts.
+
+    if ($opens_deleted > 0 || $clicks_deleted > 0) {
+      watchdog('simplenews_statistics', 'Deleted %n1 open records and %n2 click records.', array('%n1' => $opens_deleted, '%n2' => $clicks_deleted));
+    }
+  }
+}
 
 /**
  * Implements hook_views_api().
