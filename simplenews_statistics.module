@@ -376,3 +376,18 @@ function simplenews_statistics_count_clicks($nid, $distinct = FALSE) {
 
   return $query->countQuery()->execute()->fetchField();
 }
+
+/**
+ * Counts the number of unsubscribes for a newsletter category.
+ */
+function simplenews_statistics_count_unsubscribes($tid, $source = '') {
+  $query = db_select('simplenews_subscription', 'ss')
+    ->condition('ss.tid', $tid)
+    ->condition('ss.status', 0);
+
+  if ($source != '') {
+    $query->condition('ss.source', $source);
+  }
+
+  return $query->countQuery()->execute()->fetchField();
+}
