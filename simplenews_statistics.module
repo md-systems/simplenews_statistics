@@ -91,25 +91,13 @@ function simplenews_statistics_permission() {
  */
 function simplenews_statistics_node_delete($node) {
   if ($node->type == 'simplenews') {
-    // Delete all click and open records for this newsletter.
-    // @todo: Combine click removal into a single query with a join.
-    $url_query = db_select('simplenews_statistics_url', 'ssu')
-      ->fields('ssu', array('urlid'))
-      ->condition('ssu.nid', $node->nid);
-    $result = $url_query->execute();
-
-    $urlids = array();
-    foreach ($result as $url_record) {
-      $urlids[] = $url_record->urlid;
-    }
-
-    db_delete('simplenews_statistics_click')
-      ->condition('urlid', $urlids)
-      ->execute();
-    db_delete('simplenews_statistics_open')
+    // Delete all open and click records for this newsletter.
+    simplenews_statistics_delete_opens($node->nid);
+    simplenews_statistics_delete_clicks($node->nid);
+    // Delete corresponding record from {simplenews_statistics} table.
+    db_delete('simplenews_statistics')
       ->condition('nid', $node->nid)
       ->execute();
-    // @todo: Delete clicks and opens per subscriber when they are "deleted".
   }
 }
 
@@ -120,19 +108,30 @@ function simplenews_statistics_cron() {
   // Delete open and click records after a specified period of time.
   $days = variable_get('simplenews_statistics_archive_days', 0);
   if (is_numeric($days) && $days > 0) {
-    // @todo: Archive older newsletters (need new db column).
     $timestamp = strtotime("-$days days");
-    $opens_deleted = db_delete('simplenews_statistics_open')
-      ->condition('timestamp', $timestamp, '<')
-      ->execute();
-    $clicks_deleted = db_delete('simplenews_statistics_click')
-      ->condition('timestamp', $timestamp, '<')
-      ->execute();
-    // @todo: Delete by newsletter sent timestamp and save aggregated counts.
 
-    if ($opens_deleted > 0 || $clicks_deleted > 0) {
-      watchdog('simplenews_statistics', 'Deleted %n1 open records and %n2 click records.', array('%n1' => $opens_deleted, '%n2' => $clicks_deleted));
+    // Only archive one per cron run.
+    $query = db_select('simplenews_statistics', 'ss')
+      ->fields('ss')
+      ->condition('ss.archived', 0)
+      ->condition('ss.send_end_timestamp', 0, '>')
+      ->condition('ss.send_end_timestamp', $timestamp, '<');
+    $record = $query->execute()->fetchObject();
+
+    if (empty($record)) {
+      return; // Nothing to archive.
     }
+    $nid = $record->nid;
+    // Update simplenews_statistics record.
+    $record->archived = 1;
+    $record->unique_opens = simplenews_statistics_count_opens($nid, TRUE);
+    $record->total_opens = simplenews_statistics_delete_opens($nid);
+    $record->unique_clicks = simplenews_statistics_count_clicks($nid, TRUE);
+    $record->total_clicks = simplenews_statistics_delete_clicks($nid);
+    drupal_write_record('simplenews_statistics', $record, 'nid');
+    // @todo: Save url click counts to individual urls.
+
+    watchdog('simplenews_statistics', 'Newsletter %nid archived. Deleted %total_opens open records and %total_clicks click records.', array('%nid' => $nid, '%total_opens' => $record->total_opens, '%total_clicks' => $record->total_clicks));
   }
 }
 
@@ -412,4 +411,35 @@ function simplenews_statistics_count_unsubscribes($tid, $source = '') {
   }
 
   return $query->countQuery()->execute()->fetchField();
+}
+
+/**
+ * Delete all open records for a newsletter.
+ */
+function simplenews_statistics_delete_opens($nid) {
+  return db_delete('simplenews_statistics_open')
+    ->condition('nid', $nid)
+    ->execute();
+}
+
+/**
+ * Delete all click records for a newsletter.
+ */
+function simplenews_statistics_delete_clicks($nid) {
+  // Get urlids for newsletter.
+  $urlids = array();
+
+  $query = db_select('simplenews_statistics_url', 'ssu')
+    ->fields('ssu', array('urlid'))
+    ->condition('ssu.nid', $nid);
+  $result = $query->execute();
+
+  foreach ($result as $record) {
+    $urlids[] = $record->urlid;
+  }
+
+  // Delete and return count.
+  return db_delete('simplenews_statistics_click')
+    ->condition('urlid', $urlids)
+    ->execute();
 }
