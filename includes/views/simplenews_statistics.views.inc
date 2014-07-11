@@ -77,6 +77,24 @@ function simplenews_statistics_views_data() {
     ),
   );
 
+  $data['simplenews_statistics_url']['click_count'] = array(
+    'title' => t('Click count'),
+    'help' => t('The number of times this URL has been clicked.'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
   // Views definitions for the 'clicks' table.
   $data['simplenews_statistics_click']['table'] = array(
     'base' => array(
@@ -293,6 +311,77 @@ function simplenews_statistics_views_data() {
     ),
   );
 
+  $data['simplenews_statistics']['archived'] = array(
+    'title' => t('Archived'),
+    'help' => t('Whether this newsletter has been archived or not.'),
+    'field' => array(
+      'handler' => 'views_handler_field_boolean',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_boolean',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_boolean',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_boolean',
+    ),
+  );
+
+  $data['simplenews_statistics']['unique_opens'] = array(
+    'title' => t('Unique opens'),
+    'help' => t('Unique opens (archived only).'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
+  $data['simplenews_statistics']['total_opens'] = array(
+    'title' => t('Total opens'),
+    'help' => t('Total opens (archived only).'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
+  $data['simplenews_statistics']['unique_clicks'] = array(
+    'title' => t('Unique clicks'),
+    'help' => t('Unique clicks (archived only).'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
   // Views integration for calculations with custom handlers.
   $data['simplenews_statistics']['subscriber_count'] = array(
     'title' => t('Subscriber count'),
@@ -312,6 +401,7 @@ function simplenews_statistics_views_data() {
   );
 
   $data['simplenews_statistics']['open_count'] = array(
+    // @todo: Change to only do 'open rate'.
     'title' => t('Open count'),
     'help' => t('Open count and rate.'),
     'field' => array(
@@ -320,6 +410,7 @@ function simplenews_statistics_views_data() {
   );
 
   $data['simplenews_statistics']['click_count'] = array(
+    // @todo: Change to only do 'ctr'.
     'title' => t('Click count'),
     'help' => t('Click count and CTR (click-through rate).'),
     'field' => array(

@@ -87,6 +87,19 @@ function simplenews_statistics_permission() {
 }
 
 /**
+ * Implements hook_node_insert().
+ */
+function simplenews_statistics_node_insert($node) {
+  if ($node->type == 'simplenews') {
+    // Create corresponding record in {simplenews_statistics} table.
+    $record = array(
+      'nid' => $node->nid,
+    );
+    drupal_write_record('simplenews_statistics', $record);
+  }
+}
+
+/**
  * Implements hook_node_delete().
  */
 function simplenews_statistics_node_delete($node) {
@@ -152,7 +165,7 @@ function simplenews_statistics_views_api() {
  * image to the body to track opens.
  */
 function simplenews_statistics_mail_alter(&$message) {
-  if (($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test')) {
+  if ($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test') {
     $node = $message['params']['simplenews_source']->getNode();
     $subscriber = $message['params']['simplenews_source']->getSubscriber();
 
@@ -160,35 +173,29 @@ function simplenews_statistics_mail_alter(&$message) {
     // make sure that the link will still work but won't be counted.
     $snid = isset($subscriber->snid) ? $subscriber->snid : 0;
 
-    // Optionally ignore snid tracking for test sends.
+    // Optionally ignore $snid tracking for test sends.
     $track_test = variable_get('simplenews_statistics_track_test', 0);
     if ($track_test == 0 && $message['id'] == 'simplenews_test') {
       $snid = 0;
     }
 
-    // Parse body.
+    // Parse links in body.
     _simplenews_statistics_parse_links($message['body'], $node->nid, $snid);
 
     // Add view image.
     _simplenews_statistics_image_tag($message['body'], $node->nid, $snid);
   }
 
+  // If this is a true newsletter send then we also want to update the
+  // newsletter record {simplenews_statistics} table.
   if ($message['id'] == 'simplenews_node') {
-    // This is a true newsletter send: create record if one does not exist.
-    $query = db_select('simplenews_statistics', 'ss')
-      ->fields('ss', array('nid'))
-      ->condition('nid', $node->nid);
-    $result = $query->execute()->fetchField();
-    if ($result === FALSE) {
-      $record = new stdClass();
-      $record->nid = $node->nid;
-      $record->subscriber_count = simplenews_statistics_count_subscribers($node->nid);
-      drupal_write_record('simplenews_statistics', $record);
-    }
-
+    $subscriber_count = simplenews_statistics_count_subscribers($node->nid);
     // Set the send_start_timestamp if this is the first newsletter.
     db_update('simplenews_statistics')
-      ->fields(array('send_start_timestamp' => time()))
+      ->fields(array(
+        'send_start_timestamp' => time(),
+        'subscriber_count' => $subscriber_count,
+      ))
       ->condition('nid', $node->nid)
       ->condition('send_start_timestamp', 0)
       ->execute();
@@ -442,4 +449,18 @@ function simplenews_statistics_delete_clicks($nid) {
   return db_delete('simplenews_statistics_click')
     ->condition('urlid', $urlids)
     ->execute();
+}
+
+/**
+ * Check if a given newsletter is archived.
+ */
+function simplenews_statistics_is_archived($nid) {
+  $query = db_select('simplenews_statistics', 'ss')
+    ->fields('ss', array('archived'))
+    ->condition('ss.nid', $nid);
+  if ($query->execute()->fetchField() == 1) {
+    return TRUE;
+  }
+
+  return FALSE;
 }
