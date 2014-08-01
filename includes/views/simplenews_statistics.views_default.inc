@@ -33,8 +33,62 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['exposed_form']['type'] = 'basic';
   $handler->display->display_options['pager']['type'] = 'none';
   $handler->display->display_options['pager']['options']['offset'] = '0';
-  $handler->display->display_options['style_plugin'] = 'default';
-  $handler->display->display_options['row_plugin'] = 'fields';
+  $handler->display->display_options['style_plugin'] = 'table';
+  $handler->display->display_options['style_options']['columns'] = array(
+    'subscriber_count' => 'subscriber_count',
+    'sent_subscriber_count' => 'sent_subscriber_count',
+    'open_count' => 'open_count',
+    'open_count_1' => 'open_count_1',
+    'open_count_2' => 'open_count_2',
+    'click_count' => 'click_count',
+    'click_count_1' => 'click_count_1',
+    'click_count_2' => 'click_count_2',
+  );
+  $handler->display->display_options['style_options']['default'] = '-1';
+  $handler->display->display_options['style_options']['info'] = array(
+    'subscriber_count' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'sent_subscriber_count' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'open_count' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'open_count_1' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'open_count_2' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'click_count' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'click_count_1' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'click_count_2' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+  );
   /* Field: Simplenews Statistics: Subscriber count */
   $handler->display->display_options['fields']['subscriber_count']['id'] = 'subscriber_count';
   $handler->display->display_options['fields']['subscriber_count']['table'] = 'simplenews_statistics';

@@ -159,6 +159,17 @@ function simplenews_statistics_views_api() {
 }
 
 /**
+ * Implements hook_admin_paths().
+ */
+function simplenews_statistics_admin_paths(){
+  $paths = array(
+    'node/*/simplenews_statistics*' => TRUE,
+  );
+
+  return $paths;
+}
+
+/**
  * Implements hook_mail_alter().
  *
  * Parses all the links in the email so they can be tracked. Also adds a hidden
