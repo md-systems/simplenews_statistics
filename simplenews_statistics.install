@@ -93,7 +93,6 @@ function simplenews_statistics_schema() {
         'type' => 'text',
         'size' => 'normal',
         'not null' => TRUE,
-        'default' => '',
       ),
       'click_count' => array(
         'description' => 'Aggregated click count if newsletter is archived.',
