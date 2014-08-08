@@ -65,6 +65,14 @@ function simplenews_statistics_menu() {
  * Access callback for statistics landing page.
  */
 function simplenews_statistics_node_tab_access($permission, $node) {
+  // Show warning about HTML.
+  if (isset($node->simplenews->tid)) {
+    $category = simplenews_category_load($node->simplenews->tid);
+    if ($category->format !== 'html') {
+      drupal_set_message(t('Newsletter category %name format has not been set to HTML. There will be no statistics recorded for this newsletter.', array('%name' => $category->name)), 'warning', FALSE);
+    }
+  }
+
   return simplenews_check_node_types($node->type) && user_access($permission);
 }
 

@@ -37,5 +37,13 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
     '#maxlength' => 4,
   );
 
+  // Check for HTML formats.
+  $categories = simplenews_categories_load_multiple();
+  foreach ($categories as $category) {
+    if ($category->format !== 'html') {
+      drupal_set_message(t('Newsletter category %name format has not been set to HTML. There will be no statistics recorded for this newsletter.', array('%name' => $category->name)), 'warning');
+    }
+  }
+
   return system_settings_form($form);
 }
