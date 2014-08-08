@@ -14,3 +14,4 @@ files[] = tests/simplenews_statistics.test
 files[] = includes/views/handlers/simplenews_statistics_handler_subscribers.inc
 files[] = includes/views/handlers/simplenews_statistics_handler_opens.inc
 files[] = includes/views/handlers/simplenews_statistics_handler_clicks.inc
+files[] = includes/views/handlers/simplenews_statistics_handler_unsubscribes.inc

@@ -48,12 +48,9 @@ class simplenews_statistics_handler_subscribers extends views_handler_field {
    * Renders the field handler.
    */
   function render($values) {
-    $query = db_select('simplenews_statistics', 'ss')
-      ->fields('ss', array('subscriber_count'))
-      ->condition('nid', $values->nid);
-    $subscriber_count = $query->execute()->fetchField();
+    $subscriber_count = $values->simplenews_newsletter_sent_subscriber_count;
 
-    if ($subscriber_count === FALSE) {
+    if ($subscriber_count == 0) {
       $subscriber_count = simplenews_statistics_count_subscribers($values->nid);
     }
 

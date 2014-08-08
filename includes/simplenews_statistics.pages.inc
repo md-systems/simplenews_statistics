@@ -44,9 +44,9 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
   $type = 'image/png; utf-8';
   $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
 
+  // Default headers are set by drupal_page_header(), just set content type.
   drupal_add_http_header('Content-Type', $type);
   drupal_add_http_header('Content-Length', filesize($file));
-  // @todo: Set some more headers like cache.
 
   readfile($file);
   drupal_exit();
@@ -148,4 +148,12 @@ function simplenews_statistics_click_page($urlid, $snid) {
   // Fallback on any error is to go to the homepage.
   // @todo: Give some feedback to user and perhaps watchdog.
   drupal_goto();
+}
+
+/**
+ * Page callback to render a view with contextual links.
+ */
+function simplenews_statistics_embed_view($view_name, $display_id) {
+  $view = views_embed_view($view_name);
+  return render($view);
 }

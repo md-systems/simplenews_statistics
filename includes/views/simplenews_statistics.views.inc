@@ -428,6 +428,15 @@ function simplenews_statistics_views_data() {
     ),
   );
 
+  $data['simplenews_statistics']['bounce_rate'] = array(
+    'title' => t('Bounce rate'),
+    'help' => t('Unsubscribe and bounce rates.'),
+    'field' => array(
+      'handler' => 'simplenews_statistics_handler_unsubscribes',
+    ),
+  );
+
+
   return $data;
 }
 
