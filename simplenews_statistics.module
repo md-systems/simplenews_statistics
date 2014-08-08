@@ -380,6 +380,19 @@ function simplenews_statistics_set_url($url, $nid) {
  * Get open count for the given node.
  */
 function simplenews_statistics_count_opens($nid, $distinct = FALSE) {
+  // Check if newsletter is archived.
+  if (simplenews_statistics_is_archived($nid)) {
+    // Select and return aggregated count.
+    $query = db_select('simplenews_statistics', 'ss')
+      ->fields('ss', array('unique_opens', 'total_opens'))
+      ->condition('ss.nid', $nid);
+    $record = $query->execute()->fetchObject();
+    if ($distinct) {
+      return $record->unique_opens;
+    }
+    return $record->total_opens;
+  }
+  // Manual count.
   $query = db_select('simplenews_statistics_open', 'sso')
     ->condition('sso.nid', $nid);
 
@@ -404,6 +417,7 @@ function simplenews_statistics_count_subscribers($nid) {
  * Counts the number of subscribers who have opened a link.
  */
 function simplenews_statistics_count_clicks($nid, $distinct = FALSE) {
+  //@todo: Archived check.
   $query = db_select('simplenews_statistics_click', 'ssc')
     ->condition('ssu.nid', $nid);
   $query->join('simplenews_statistics_url', 'ssu', 'ssu.urlid = ssc.urlid');

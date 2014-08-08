@@ -39,7 +39,6 @@ class simplenews_statistics_handler_opens extends views_handler_field {
   function option_definition() {
     $options = parent::option_definition();
 
-    $options['open_format'] = array('default' => 0);
     $options['open_rate_precision'] = array('default' => '0');
 
     return $options;
@@ -51,50 +50,35 @@ class simplenews_statistics_handler_opens extends views_handler_field {
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
-    $form['open_format'] = array(
-      '#type' => 'select',
-      '#title' => t('Display format'),
-      '#options' => array(
-        'total' => t('Total count'),
-        'unique' => t('Unique count'),
-        'open_rate' => t('Open rate'),
-      ),
-      '#default_value' => $this->options['open_format'],
-      '#description' => t('Select the display format for the open counter.'),
-    );
-
-    $form['open_rate_precision'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Precision'),
-      '#default_value' => $this->options['open_rate_precision'],
-      '#description' => t('Number of decimal places to which the open rate should be calculated.'),
-      '#states' => array(
-        'visible' => array(
-          ':input[name="options[open_format]"]' => array('value' => 'open_rate'),
-        ),
-      ),
-    );
+    if ($this->real_field == 'open_rate') {
+      $form['open_rate_precision'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Precision'),
+        '#default_value' => $this->options['open_rate_precision'],
+        '#description' => t('Number of decimal places to which the open rate should be calculated.'),
+      );
+    }
   }
 
   /**
    * Renders the field handler.
    */
   function render($values) {
-    $format = $this->options['open_format'];
+    $field = $this->real_field;
     $precision = intval($this->options['open_rate_precision']);
     $sent_count = $values->simplenews_newsletter_sent_subscriber_count;
 
-    if ($format == 'total') {
+    if ($field == 'total_opens') {
       $open_count = simplenews_statistics_count_opens($values->nid);
     }
     else {
       $open_count = simplenews_statistics_count_opens($values->nid, TRUE);
     }
 
-    if ($format == 'open_rate' && $sent_count > 0) {
+    if ($field == 'open_rate' && $sent_count > 0) {
       return round($open_count / $sent_count * 100, $precision) . '%';
     }
-    elseif ($format == 'open_rate' && $sent_count == 0) {
+    elseif ($field == 'open_rate' && $sent_count == 0) {
       return t('N/A');
     }
 

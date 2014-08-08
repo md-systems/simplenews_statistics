@@ -9,7 +9,9 @@
  * Implements hook_views_data().
  */
 function simplenews_statistics_views_data() {
-  // Views definitions for the 'urls' table.
+  /**
+   * Views definitions for the 'urls' table.
+   */
   $data['simplenews_statistics_url']['table'] = array(
     'base' => array(
       'field' => 'urlid',
@@ -95,7 +97,9 @@ function simplenews_statistics_views_data() {
     ),
   );
 
-  // Views definitions for the 'clicks' table.
+  /**
+   * Views definitions for the 'clicks' table.
+   */
   $data['simplenews_statistics_click']['table'] = array(
     'base' => array(
       'field' => 'clid',
@@ -177,7 +181,9 @@ function simplenews_statistics_views_data() {
     ),
   );
 
-  // Views integration definitions for the 'opens' table.
+  /**
+   * Views integration definitions for the 'opens' table.
+   */
   $data['simplenews_statistics_open']['table'] = array(
     'base' => array(
       'field' => 'opid',
@@ -262,7 +268,9 @@ function simplenews_statistics_views_data() {
     ),
   );
 
-  // Views integration definitions for the 'simplenews_statistics' table.
+  /**
+   * Views integration definitions for the 'simplenews_statistics' table.
+   */
   $data['simplenews_statistics']['table'] = array(
     'group' => t('Simplenews Statistics'),
     'join' => array(
@@ -330,11 +338,12 @@ function simplenews_statistics_views_data() {
 
   $data['simplenews_statistics']['unique_opens'] = array(
     'title' => t('Unique opens'),
-    'help' => t('Unique opens (archived only).'),
+    'help' => t('Count unique opens for a newsletter.'),
     'field' => array(
-      'handler' => 'views_handler_field_numeric',
+      'handler' => 'simplenews_statistics_handler_opens',
       'click sortable' => TRUE,
     ),
+    // @todo: Filter, sort, and argument will not work if not archived.
     'filter' => array(
       'handler' => 'views_handler_filter_numeric',
     ),
@@ -348,11 +357,12 @@ function simplenews_statistics_views_data() {
 
   $data['simplenews_statistics']['total_opens'] = array(
     'title' => t('Total opens'),
-    'help' => t('Total opens (archived only).'),
+    'help' => t('Count total opens for a newsletter.'),
     'field' => array(
-      'handler' => 'views_handler_field_numeric',
+      'handler' => 'simplenews_statistics_handler_opens',
       'click sortable' => TRUE,
     ),
+    // @todo: Filter, sort, and argument will not work if not archived.
     'filter' => array(
       'handler' => 'views_handler_filter_numeric',
     ),
@@ -368,7 +378,7 @@ function simplenews_statistics_views_data() {
     'title' => t('Unique clicks'),
     'help' => t('Unique clicks (archived only).'),
     'field' => array(
-      'handler' => 'views_handler_field_numeric',
+      'handler' => 'simplenews_statistics_handler_clicks',
       'click sortable' => TRUE,
     ),
     'filter' => array(
@@ -382,7 +392,9 @@ function simplenews_statistics_views_data() {
     ),
   );
 
-  // Views integration for calculations with custom handlers.
+  /**
+   * Views integration for calculations with custom handlers.
+   */
   $data['simplenews_statistics']['subscriber_count'] = array(
     'title' => t('Subscriber count'),
     'help' => t('Shows current number of subscribers if not yet sent and number of subscribers at time of sending if sent. More accurate than the number provided by <em>Simplenews issue: Subscriber count</em>.'),
@@ -400,19 +412,17 @@ function simplenews_statistics_views_data() {
     ),
   );
 
-  $data['simplenews_statistics']['open_count'] = array(
-    // @todo: Change to only do 'open rate'.
-    'title' => t('Open count'),
-    'help' => t('Open count and rate.'),
+  $data['simplenews_statistics']['open_rate'] = array(
+    'title' => t('Open rate'),
+    'help' => t('Calculate open rate for a newsletter.'),
     'field' => array(
       'handler' => 'simplenews_statistics_handler_opens',
     ),
   );
 
-  $data['simplenews_statistics']['click_count'] = array(
-    // @todo: Change to only do 'ctr'.
-    'title' => t('Click count'),
-    'help' => t('Click count and CTR (click-through rate).'),
+  $data['simplenews_statistics']['ctr'] = array(
+    'title' => t('Click-through rate'),
+    'help' => t('CTR (click-through rate).'),
     'field' => array(
       'handler' => 'simplenews_statistics_handler_clicks',
     ),
