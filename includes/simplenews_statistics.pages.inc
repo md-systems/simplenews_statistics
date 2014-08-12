@@ -138,7 +138,7 @@ function simplenews_statistics_click_page($urlid, $snid) {
     foreach (module_implements($hook) as $module) {
       $function = $module . '_' . $hook;
       if (function_exists($function)) {
-        $function($path, $options, $snid, $nid);
+        $function($path, $options, $snid, $url_record->nid);
       }
     }
     // Fragment behaviour can get out of spec here.
