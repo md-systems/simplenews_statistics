@@ -120,6 +120,13 @@ function simplenews_statistics_views_default_views() {
   $handler->display->display_options['fields']['ctr']['table'] = 'simplenews_statistics';
   $handler->display->display_options['fields']['ctr']['field'] = 'ctr';
   $handler->display->display_options['fields']['ctr']['alter']['text'] = '[ctr] ([unique_clicks])';
+  /* Field: Simplenews Statistics: Bounce rate */
+  $handler->display->display_options['fields']['bounce_rate']['id'] = 'bounce_rate';
+  $handler->display->display_options['fields']['bounce_rate']['table'] = 'simplenews_statistics';
+  $handler->display->display_options['fields']['bounce_rate']['field'] = 'bounce_rate';
+  $handler->display->display_options['fields']['bounce_rate']['number'] = 1;
+  $handler->display->display_options['fields']['bounce_rate']['percentage'] = 1;
+  $handler->display->display_options['fields']['bounce_rate']['precision'] = '2';
   /* Sort criterion: Content: Post date */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'node';

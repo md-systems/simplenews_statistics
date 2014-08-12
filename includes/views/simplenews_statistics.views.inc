@@ -430,7 +430,7 @@ function simplenews_statistics_views_data() {
 
   $data['simplenews_statistics']['bounce_rate'] = array(
     'title' => t('Bounce rate'),
-    'help' => t('Unsubscribe and bounce rates.'),
+    'help' => t('Unsubscribe and bounce rates. Only unsubscribes or bounces that result in a user being unsubscribed by a third-party module will be counted.'),
     'field' => array(
       'handler' => 'simplenews_statistics_handler_unsubscribes',
     ),
