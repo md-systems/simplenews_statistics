@@ -209,7 +209,9 @@ function simplenews_statistics_schema() {
  */
 function simplenews_statistics_uninstall() {
   // Delete all variables added by this module.
-  variable_del('simplenews_statistics_*');
+  variable_del('simplenews_statistics_track_test');
+  variable_del('simplenews_statistics_track_mailto');
+  variable_del('simplenews_statistics_archive_days');
 }
 
 /**
