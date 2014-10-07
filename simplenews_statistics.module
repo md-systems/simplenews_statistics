@@ -489,10 +489,18 @@ function simplenews_statistics_delete_clicks($nid) {
     $urlids[] = $record->urlid;
   }
 
-  // Delete and return count.
-  return db_delete('simplenews_statistics_click')
-    ->condition('urlid', $urlids)
-    ->execute();
+  // Execute delete.
+  if (!empty($urlids)) {
+    $deleted = db_delete('simplenews_statistics_click')
+      ->condition('urlid', $urlids)
+      ->execute();
+  }
+  else {
+    $deleted = 0;
+  }
+
+  // Return count.
+  return $deleted;
 }
 
 /**
