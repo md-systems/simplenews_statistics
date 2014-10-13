@@ -40,7 +40,7 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
   $form['simplenews_statistics']['simplenews_statistics_exclude'] = array(
     '#type' => 'textarea',
     '#title' => t('Exclude links from tracking'),
-    '#description' => t('<em>Experimental setting.</em> Enter a list paths that should be excluded by the links replacement process. Wildcards are allowed. Each path should be on a newline. External URLs are currently not supported for exclusion. You may need to include inital and/or trailing slashes.'),
+    '#description' => t('Enter a list paths or URLs that should be excluded by the links replacement process. Wildcards are allowed. Each URL or path should be on a newline. You may need to include initial and/or trailing slashes for paths, but this will depend on how the href attribute is structured.'),
     '#default_value' => variable_get('simplenews_statistics_exclude', ''),
   );
 
