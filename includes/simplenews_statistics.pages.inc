@@ -23,7 +23,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
 
   // Once decoded properly we can know for sure that nid & snid are numeric.
   if (!is_numeric($nid) || !is_numeric($snid)) {
-    watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter(s).');
+    watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter(s). Node ID: @nid. Subscriber ID: @snid', array('@nid' => $nid, '@snid' => $snid));
   }
   else {
     $subscriber = simplenews_subscriber_load($snid);
@@ -69,7 +69,8 @@ function simplenews_statistics_click_page($urlid, $snid) {
   // Once decoded properly we can know for sure that the $urlid and $snid are
   // numeric. Fallback on any error is to go to the homepage.
   if (!is_numeric($urlid) || !is_numeric($snid)) {
-    watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s).');
+    watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s). URL ID: @urlid. Subscriber ID: @snid', array('@urlid' => $urlid, '@snid' => $snid));
+    drupal_set_message(t('Could not resolve destination URL.'), 'error');
     drupal_goto();
   }
 
@@ -146,7 +147,8 @@ function simplenews_statistics_click_page($urlid, $snid) {
   }
 
   // Fallback on any error is to go to the homepage.
-  // @todo: Give some feedback to user and perhaps watchdog.
+  watchdog('simplenews_statistics', 'URL could not be resolved. URL ID: @urlid. Subscriber ID: @snid', array('@urlid' => $urlid, '@snid' => $snid));
+  drupal_set_message(t('Could not resolve destination URL.'), 'error');
   drupal_goto();
 }
 
