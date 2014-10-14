@@ -309,18 +309,19 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   if ($url_record == FALSE) {
     $url_record = simplenews_statistics_set_url($url, $nid);
   }
+  $urlid = $url_record->urlid;
 
   // Call possible encoders for urlid & snid in modules implementing the hook.
   $hook = 'simplenews_statistics_encode';
   foreach (module_implements($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
-      $url_record->urlid = $function($url_record->urlid, 'urlid');
+      $urlid = $function($urlid, 'urlid');
       $snid = $function($snid, 'snid');
     }
   }
 
-  return url('track/click/' . $url_record->urlid . '/' . $snid, array('absolute' => TRUE));
+  return url('track/click/' . $urlid . '/' . $snid, array('absolute' => TRUE));
 }
 
 /**

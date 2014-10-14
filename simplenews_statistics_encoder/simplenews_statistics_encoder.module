@@ -46,6 +46,12 @@ function simplenews_statistics_encoder_permission() {
  * Implements hook_simplenews_statistics_encode().
  */
 function simplenews_statistics_encoder_simplenews_statistics_encode($id, $key) {
+  // The IDs should always be numeric, but check to be sure.
+  if (!is_numeric($id)) {
+    return $id;
+  }
+
+  // Encode based on type selected.
   $type = variable_get('simplenews_statistics_encoder_type', 'md5');
   module_load_include('inc', 'simplenews_statistics_encoder', 'encoder');
 
