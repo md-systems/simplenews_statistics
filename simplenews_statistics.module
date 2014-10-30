@@ -239,10 +239,10 @@ function _simplenews_statistics_parse_links(&$body, $nid, $snid) {
   else {
     // @todo: Try and write some cleaner code here.
     $body = preg_replace_callback(
-      '/(<a[^>]+href=")([^"]*)/mi',
+      '/<a([^>]*)href=[\"\']([^\"\']*)[\"\']([^>]*)>/mi',
       function($matches) use ($nid, $snid) {
         $value = _simplenews_statistics_replace_url($matches[2], $nid, $snid);
-        return '<a href="' . $value;
+        return '<a' . $matches[1] . 'href="' . $value . '"' . $matches[3] . '>';
       },
       $body
     );
