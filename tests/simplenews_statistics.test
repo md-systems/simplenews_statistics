@@ -74,10 +74,10 @@ class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
     $this->drupalPost(NULL, $edit_category, t('Save'));
 
     $body_text = <<<TEXT
-      Mail token: <strong>[simplenews-subscriber:mail]</strong><br />
-      add a link in the mail to drupal.org so we can test later <br />
-      <a title="Simplenews Statistics Link" href="http://drupal.org/project/simplenews_statistics ">Simplenews Statistics Module Page</a>
-    TEXT;
+Mail token: <strong>[simplenews-subscriber:mail]</strong><br />
+add a link in the mail to drupal.org so we can test later <br />
+<a title="Simplenews Statistics Link" href="http://drupal.org/project/simplenews_statistics ">Simplenews Statistics Module Page</a>
+TEXT;
 
     $edit = array(
       'title' => $this->randomName(),
