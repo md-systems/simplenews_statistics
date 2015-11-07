@@ -46,7 +46,7 @@ function simplenews_statistics_node_delete(NodeInterface $node) {
  */
 function simplenews_statistics_cron() {
   // Delete open and click records after a specified period of time.
-  $days = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_archive_days');
+  $days = \Drupal::config('simplenews_statistics.settings')->get('archive_days');
   if (is_numeric($days) && $days > 0) {
     $timestamp = strtotime("-$days days");
 
@@ -92,7 +92,7 @@ function simplenews_statistics_mail_alter(&$message) {
     $snid = $subscriber->id() ?: 0;
 
     // Optionally ignore $snid tracking for test sends.
-    $track_test = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_test');
+    $track_test = \Drupal::config('simplenews_statistics.settings')->get('track_test');
     if ($track_test == 0 && $message['id'] == 'simplenews_test') {
       $snid = 0;
     }
@@ -185,7 +185,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   }
 
   // Do not replace 'mailto:' links unless it is configured.
-  $track_mailto = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_mailto');
+  $track_mailto = \Drupal::config('simplenews_statistics.settings')->get('track_mailto');
   if ($track_mailto == 0) {
     if (substr($url, 0, 7) == 'mailto:') {
       return $url;
@@ -198,8 +198,8 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   }
 
   // Do not replace links that should be excluded.
-  $exclude = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_exclude');
-  if ($exclude && drupal_match_path($url, $exclude)) {
+  $exclude = \Drupal::config('simplenews_statistics.settings')->get('exclude');
+  if ($exclude && \Drupal::service('path.matcher')->matchPath($url, $exclude)) {
     return $url;
   }
 

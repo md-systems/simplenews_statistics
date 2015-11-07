@@ -2,11 +2,11 @@ simplenews_statistics.settings:
   type: config_object
   label: Settings
   mapping:
-    simplenews_statistics_track_test:
+    track_test:
       type: integer
-    simplenews_statistics_track_mailto:
+    track_mailto:
       type: integer
-    simplenews_statistics_archive_days:
+    archive_days:
       type: integer
-    simplenews_statistics_exclude:
+    exclude:
       type: string
