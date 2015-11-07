@@ -5,6 +5,7 @@
  * Main simplenews statistics file.
  */
 
+use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 
@@ -183,10 +184,8 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
         $snid = $function($snid, 'snid');
       }
     }
-    // @FIXME
-// url() expects a route name or an external URI.
-// $body .= '<img src="' . url('track/open/' . $nid . '/' . $snid, array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
-
+    $track_open = Url::fromRoute('simplenews_statistics.track_open', ['node' => $nid, 'simplenews_subscriber' => $snid], ['absolute' => TRUE])->toString();
+    $body .= '<img src="' . $track_open . '" width="1" height="1" style="display: none;" />';
   }
 }
 
@@ -237,9 +236,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  // @FIXME
-// url() expects a route name or an external URI.
-// return url('track/click/' . $urlid . '/' . $snid, array('absolute' => TRUE));
+  return Url::fromRoute('simplenews_statistics.track_click', ['urlid' => $urlid, 'simplenews_subscriber' => $snid], ['absolute' => TRUE])->toString();
 
 }
 
