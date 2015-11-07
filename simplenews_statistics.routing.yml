@@ -1,0 +1,29 @@
+simplenews_statistics.admin_settings_form:
+  path: /admin/config/services/simplenews/statistics
+  defaults:
+    _title: Statistics
+    _form: \Drupal\simplenews_statistics\Form\SimplenewsStatisticsAdminSettingsForm
+  requirements:
+    _permission: 'administer newsletter statistics'
+simplenews_statistics.embed_view_simplenews_statistics_overview_page:
+  path: '/node/{node}/simplenews_statistics'
+  defaults:
+    permission: 'view newsletter statistics'
+    view_name: simplenews_statistics_overview
+    display_id: page
+    _title: Statistics
+    _controller: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_embed_view'
+  requirements:
+    _custom_access: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_node_tab_access'
+simplenews_statistics.open_page:
+  path: '/track/open/{nid}/{snid}'
+  defaults:
+    _controller: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_open_page'
+  requirements:
+    _permission: 'access content'
+simplenews_statistics.click_page:
+  path: '/track/click/{urlid}/{snid}'
+  defaults:
+    _controller: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_click_page'
+  requirements:
+    _permission: 'access content'

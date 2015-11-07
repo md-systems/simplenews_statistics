@@ -1,0 +1,12 @@
+simplenews_statistics.settings:
+  type: mapping
+  label: Settings
+  mapping:
+    simplenews_statistics_track_test:
+      type: integer
+    simplenews_statistics_track_mailto:
+      type: integer
+    simplenews_statistics_archive_days:
+      type: integer
+    simplenews_statistics_exclude:
+      type: string

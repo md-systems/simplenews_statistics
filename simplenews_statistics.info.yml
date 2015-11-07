@@ -1,0 +1,8 @@
+name: 'Simplenews Statistics'
+description: 'Gathers newsletter statistics.'
+core: 8.x
+package: Statistics
+dependencies:
+  - simplenews
+  - views
+type: module

@@ -18,21 +18,21 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
     '#type' => 'checkbox',
     '#title' => t('Track newsletter test sends'),
     '#description' => t('Disabling this will stop the tracking of opens and clicks for test emails. Links replacements will still be done for those test sends, but no statistics will be recorded.'),
-    '#default_value' => variable_get('simplenews_statistics_track_test', 0),
+    '#default_value' => \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_test'),
   );
 
   $form['simplenews_statistics']['simplenews_statistics_track_mailto'] = array(
     '#type' => 'checkbox',
     '#title' => t('Track mailto links'),
     '#description' => t('In some cases tracking clicks on email addresses wil result in a blank browser window. Disabling this options prevents that.'),
-    '#default_value' => variable_get('simplenews_statistics_track_mailto', 1),
+    '#default_value' => \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_mailto'),
   );
 
   $form['simplenews_statistics']['simplenews_statistics_archive_days'] = array(
     '#type' => 'textfield',
     '#title' => t('Days to keep open and click records'),
     '#description' => t('Specify a number of days beyond which the open and click records for newsletters will be deleted. This can help control the growth of the open and click database tables over time. The site cron must be correctly configured. A value of 0 disables this setting.'),
-    '#default_value' => variable_get('simplenews_statistics_archive_days', 0),
+    '#default_value' => \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_archive_days'),
     '#size' => 4,
     '#maxlength' => 4,
   );
@@ -41,7 +41,7 @@ function simplenews_statistics_admin_settings_form($form, &$form_state) {
     '#type' => 'textarea',
     '#title' => t('Exclude links from tracking'),
     '#description' => t('Enter a list paths or URLs that should be excluded by the links replacement process. Wildcards are allowed. Each URL or path should be on a newline. You may need to include initial and/or trailing slashes for paths, but this will depend on how the href attribute is structured.'),
-    '#default_value' => variable_get('simplenews_statistics_exclude', ''),
+    '#default_value' => \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_exclude'),
   );
 
   // Check for HTML formats.

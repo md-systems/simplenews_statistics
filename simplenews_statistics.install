@@ -209,10 +209,10 @@ function simplenews_statistics_schema() {
  */
 function simplenews_statistics_uninstall() {
   // Delete all variables added by this module.
-  variable_del('simplenews_statistics_track_test');
-  variable_del('simplenews_statistics_track_mailto');
-  variable_del('simplenews_statistics_archive_days');
-  variable_del('simplenews_statistics_exclude');
+  \Drupal::config('simplenews_statistics.settings')->clear('simplenews_statistics_track_test')->save();
+  \Drupal::config('simplenews_statistics.settings')->clear('simplenews_statistics_track_mailto')->save();
+  \Drupal::config('simplenews_statistics.settings')->clear('simplenews_statistics_archive_days')->save();
+  \Drupal::config('simplenews_statistics.settings')->clear('simplenews_statistics_exclude')->save();
 }
 
 /**

@@ -65,7 +65,7 @@ function simplenews_statistics_menu() {
 /**
  * Access callback for statistics landing page.
  */
-function simplenews_statistics_node_tab_access($permission, $node) {
+function simplenews_statistics_node_tab_access($permission, \Drupal\node\NodeInterface $node, Drupal\Core\Session\AccountInterface $account) {
   // Show warning about HTML.
   if (isset($node->simplenews->tid)) {
     $category = simplenews_category_load($node->simplenews->tid);
@@ -74,7 +74,7 @@ function simplenews_statistics_node_tab_access($permission, $node) {
     }
   }
 
-  return simplenews_check_node_types($node->type) && user_access($permission);
+  return simplenews_check_node_types($node->getType()) && \Drupal::currentUser()->hasPermission($permission);
 }
 
 /**
@@ -98,27 +98,27 @@ function simplenews_statistics_permission() {
 /**
  * Implements hook_node_insert().
  */
-function simplenews_statistics_node_insert($node) {
-  if ($node->type == 'simplenews') {
+function simplenews_statistics_node_insert(\Drupal\node\NodeInterface $node) {
+  if ($node->getType() == 'simplenews') {
     // Create corresponding record in {simplenews_statistics} table.
     $record = array(
-      'nid' => $node->nid,
+      'nid' => $node->id(),
     );
-    drupal_write_record('simplenews_statistics', $record);
+    \Drupal::database()->insert('simplenews_statistics')->fields($record)->execute();
   }
 }
 
 /**
  * Implements hook_node_delete().
  */
-function simplenews_statistics_node_delete($node) {
-  if ($node->type == 'simplenews') {
+function simplenews_statistics_node_delete(\Drupal\node\NodeInterface $node) {
+  if ($node->getType() == 'simplenews') {
     // Delete all open and click records for this newsletter.
-    simplenews_statistics_delete_opens($node->nid);
-    simplenews_statistics_delete_clicks($node->nid);
+    simplenews_statistics_delete_opens($node->id());
+    simplenews_statistics_delete_clicks($node->id());
     // Delete corresponding record from {simplenews_statistics} table.
     db_delete('simplenews_statistics')
-      ->condition('nid', $node->nid)
+      ->condition('nid', $node->id())
       ->execute();
   }
 }
@@ -128,7 +128,7 @@ function simplenews_statistics_node_delete($node) {
  */
 function simplenews_statistics_cron() {
   // Delete open and click records after a specified period of time.
-  $days = variable_get('simplenews_statistics_archive_days', 0);
+  $days = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_archive_days');
   if (is_numeric($days) && $days > 0) {
     $timestamp = strtotime("-$days days");
 
@@ -150,9 +150,9 @@ function simplenews_statistics_cron() {
     $record->total_opens = simplenews_statistics_delete_opens($nid);
     $record->unique_clicks = simplenews_statistics_count_clicks($nid, TRUE);
     $record->total_clicks = simplenews_statistics_delete_clicks($nid);
-    drupal_write_record('simplenews_statistics', $record, 'nid');
+    \Drupal::database()->merge('simplenews_statistics')->fields($record)->key(['nid'])->execute();
 
-    watchdog('simplenews_statistics', 'Newsletter %nid archived. Deleted %total_opens open records and %total_clicks click records.', array('%nid' => $nid, '%total_opens' => $record->total_opens, '%total_clicks' => $record->total_clicks));
+    \Drupal::logger('simplenews_statistics')->notice('Newsletter %nid archived. Deleted %total_opens open records and %total_clicks click records.', array('%nid' => $nid, '%total_opens' => $record->total_opens, '%total_clicks' => $record->total_clicks));
   }
 }
 
@@ -193,7 +193,7 @@ function simplenews_statistics_mail_alter(&$message) {
     $snid = isset($subscriber->snid) ? $subscriber->snid : 0;
 
     // Optionally ignore $snid tracking for test sends.
-    $track_test = variable_get('simplenews_statistics_track_test', 0);
+    $track_test = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_test');
     if ($track_test == 0 && $message['id'] == 'simplenews_test') {
       $snid = 0;
     }
@@ -263,14 +263,17 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
   else {
     // Call possible encoders for snid & nid in modules implementing the hook.
     $hook = 'simplenews_statistics_encode';
-    foreach (module_implements($hook) as $module) {
+    foreach (\Drupal::moduleHandler()->getImplementations($hook) as $module) {
       $function = $module . '_' . $hook;
       if (function_exists($function)) {
         $nid = $function($nid, 'nid');
         $snid = $function($snid, 'snid');
       }
     }
-    $body .= '<img src="' . url('track/open/' . $nid . '/' . $snid, array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
+    // @FIXME
+// url() expects a route name or an external URI.
+// $body .= '<img src="' . url('track/open/' . $nid . '/' . $snid, array('absolute' => TRUE)) . '" width="1" height="1" style="display: none;" />';
+
   }
 }
 
@@ -285,7 +288,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   }
 
   // Do not replace 'mailto:' links unless it is configured.
-  $track_mailto = variable_get('simplenews_statistics_track_mailto', 1);
+  $track_mailto = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_mailto');
   if ($track_mailto == 0) {
     if (substr($url, 0, 7) == 'mailto:') {
       return $url;
@@ -298,7 +301,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
   }
 
   // Do not replace links that should be excluded.
-  $exclude = variable_get('simplenews_statistics_exclude', '');
+  $exclude = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_exclude');
   if ($exclude && drupal_match_path($url, $exclude)) {
     return $url;
   }
@@ -313,7 +316,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
 
   // Call possible encoders for urlid & snid in modules implementing the hook.
   $hook = 'simplenews_statistics_encode';
-  foreach (module_implements($hook) as $module) {
+  foreach (\Drupal::moduleHandler()->getImplementations($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
       $urlid = $function($urlid, 'urlid');
@@ -321,7 +324,10 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  return url('track/click/' . $urlid . '/' . $snid, array('absolute' => TRUE));
+  // @FIXME
+// url() expects a route name or an external URI.
+// return url('track/click/' . $urlid . '/' . $snid, array('absolute' => TRUE));
+
 }
 
 /**
@@ -382,7 +388,7 @@ function simplenews_statistics_set_url($url, $nid) {
   $record->nid = $nid;
   $record->url = $url;
 
-  $result = drupal_write_record('simplenews_statistics_url', $record);
+  $result = \Drupal::database()->insert('simplenews_statistics_url')->fields($record)->execute();
   if ($result !== FALSE) {
     // Immediately cache the record for later use.
     $cached_urls = &drupal_static('simplenews_statistics_url');

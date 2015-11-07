@@ -13,7 +13,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
   // Modules implementing this hook should validate this input themself because
   // we can not know what kind of string they will generate.
   $hook = 'simplenews_statistics_decode';
-  foreach (module_implements($hook) as $module) {
+  foreach (\Drupal::moduleHandler()->getImplementations($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
       $nid = $function($nid, 'nid');
@@ -23,7 +23,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
 
   // Once decoded properly we can know for sure that nid & snid are numeric.
   if (!is_numeric($nid) || !is_numeric($snid)) {
-    watchdog('simplenews_statistics', 'Simplenews statistics open called with illegal parameter(s). Node ID: @nid. Subscriber ID: @snid', array('@nid' => $nid, '@snid' => $snid));
+    \Drupal::logger('simplenews_statistics')->notice('Simplenews statistics open called with illegal parameter(s). Node ID: @nid. Subscriber ID: @snid', array('@nid' => $nid, '@snid' => $snid));
   }
   else {
     $subscriber = simplenews_subscriber_load($snid);
@@ -32,7 +32,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
       $record->snid = $subscriber->snid;
       $record->nid = $nid;
       $record->timestamp = time();
-      drupal_write_record('simplenews_statistics_open', $record);
+      \Drupal::database()->insert('simplenews_statistics_open')->fields($record)->execute();
     }
   }
 
@@ -58,7 +58,7 @@ function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
 function simplenews_statistics_click_page($urlid, $snid) {
   // Call possible decoders for urlid & snid in modules implementing the hook.
   $hook = 'simplenews_statistics_decode';
-  foreach (module_implements($hook) as $module) {
+  foreach (\Drupal::moduleHandler()->getImplementations($hook) as $module) {
     $function = $module . '_' . $hook;
     if (function_exists($function)) {
       $urlid = $function($urlid, 'urlid');
@@ -69,7 +69,7 @@ function simplenews_statistics_click_page($urlid, $snid) {
   // Once decoded properly we can know for sure that the $urlid and $snid are
   // numeric. Fallback on any error is to go to the homepage.
   if (!is_numeric($urlid) || !is_numeric($snid)) {
-    watchdog('simplenews_statistics', 'Simplenews statistics click called with illegal parameter(s). URL ID: @urlid. Subscriber ID: @snid', array('@urlid' => $urlid, '@snid' => $snid));
+    \Drupal::logger('simplenews_statistics')->notice('Simplenews statistics click called with illegal parameter(s). URL ID: @urlid. Subscriber ID: @snid', array('@urlid' => $urlid, '@snid' => $snid));
     drupal_set_message(t('Could not resolve destination URL.'), 'error');
     drupal_goto();
   }
@@ -88,7 +88,7 @@ function simplenews_statistics_click_page($urlid, $snid) {
     $click_record->urlid = $urlid;
     $click_record->snid = $snid;
     $click_record->timestamp = time();
-    drupal_write_record('simplenews_statistics_click', $click_record);
+    \Drupal::database()->insert('simplenews_statistics_click')->fields($click_record)->execute();
 
     // Check if the open action was registered for this subscriber. If not we
     // can track the open here to improve statistics accuracy.
@@ -136,7 +136,7 @@ function simplenews_statistics_click_page($urlid, $snid) {
 
     // Call possible rewriters for the url.
     $hook = 'simplenews_statistics_rewrite_goto_url';
-    foreach (module_implements($hook) as $module) {
+    foreach (\Drupal::moduleHandler()->getImplementations($hook) as $module) {
       $function = $module . '_' . $hook;
       if (function_exists($function)) {
         $function($path, $options, $snid, $url_record->nid);
@@ -147,7 +147,7 @@ function simplenews_statistics_click_page($urlid, $snid) {
   }
 
   // Fallback on any error is to go to the homepage.
-  watchdog('simplenews_statistics', 'URL could not be resolved. URL ID: @urlid. Subscriber ID: @snid', array('@urlid' => $urlid, '@snid' => $snid));
+  \Drupal::logger('simplenews_statistics')->notice('URL could not be resolved. URL ID: @urlid. Subscriber ID: @snid', array('@urlid' => $urlid, '@snid' => $snid));
   drupal_set_message(t('Could not resolve destination URL.'), 'error');
   drupal_goto();
 }

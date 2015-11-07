@@ -1,0 +1,12 @@
+simplenews_statistics.admin_settings_form:
+  route_name: simplenews_statistics.admin_settings_form
+  title: Statistics
+simplenews_statistics.admin_settings_form_0:
+  route_name: simplenews_statistics.admin_settings_form
+  title: Settings
+  weight: -15
+  parent_id: simplenews_statistics.admin_settings_form
+simplenews_statistics.embed_view_simplenews_statistics_overview_page:
+  route_name: simplenews_statistics.embed_view_simplenews_statistics_overview_page
+  title: Statistics
+  weight: 1
