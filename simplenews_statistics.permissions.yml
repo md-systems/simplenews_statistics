@@ -1,0 +1,6 @@
+administer newsletter statistics:
+  title: 'Administer newsletter statistics'
+  description: 'Allows user to administer newsletter statistics.'
+view newsletter statistics:
+  title: 'View newsletter statistics'
+  description: 'Allows user to access the statistics.'

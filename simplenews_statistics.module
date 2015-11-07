@@ -5,6 +5,7 @@
  * Main simplenews statistics file.
  */
 
+use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 
 /**
@@ -95,8 +96,10 @@ function simplenews_statistics_cron() {
  */
 function simplenews_statistics_mail_alter(&$message) {
   if ($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test') {
-    $node = $message['params']['simplenews_mail']->getNode();
-    $subscriber = $message['params']['simplenews_mail']->getSubscriber();
+    /* @var \Drupal\simplenews\Mail\MailInterface $mail */
+    $mail = $message['params']['simplenews_mail'];
+    $node = $mail->getEntity();
+    $subscriber = $mail->getSubscriber();
 
     // During testing the snid might be unset. Use 0 in that case. This will
     // make sure that the link will still work but won't be counted.
@@ -109,30 +112,30 @@ function simplenews_statistics_mail_alter(&$message) {
     }
 
     // Parse links in body.
-    _simplenews_statistics_parse_links($message['body'], $node->nid, $snid);
+    _simplenews_statistics_parse_links($message['body'], $node->id(), $snid);
 
     // Add view image.
-    _simplenews_statistics_image_tag($message['body'], $node->nid, $snid);
+    _simplenews_statistics_image_tag($message['body'], $node->id(), $snid);
   }
 
   // If this is a true newsletter send then we also want to update the
   // newsletter record {simplenews_statistics} table.
   if ($message['id'] == 'simplenews_node') {
-    $subscriber_count = simplenews_statistics_count_subscribers($node->nid);
+    $subscriber_count = simplenews_statistics_count_subscribers($node->id());
     // Set the send_start_timestamp if this is the first newsletter.
     db_update('simplenews_statistics')
       ->fields(array(
         'send_start_timestamp' => time(),
         'subscriber_count' => $subscriber_count,
       ))
-      ->condition('nid', $node->nid)
+      ->condition('nid', $node->id())
       ->condition('send_start_timestamp', 0)
       ->execute();
 
     // Set send_end_timestamp to time() for every newsletter sent.
     db_update('simplenews_statistics')
       ->fields(array('send_end_timestamp' => time()))
-      ->condition('nid', $node->nid)
+      ->condition('nid', $node->id())
       ->execute();
   }
 }
@@ -294,16 +297,14 @@ function simplenews_statistics_get_url($url, $nid, $reset = FALSE) {
  *   Object representing the url record or FALSE.
  */
 function simplenews_statistics_set_url($url, $nid) {
-  $record = new stdClass();
-  $record->nid = $nid;
-  $record->url = $url;
+  $record = array('nid' => $nid, 'url' => $url);
 
-  $result = \Drupal::database()->insert('simplenews_statistics_url')->fields($record)->execute();
-  if ($result !== FALSE) {
+  $record['urlid'] = \Drupal::database()->insert('simplenews_statistics_url')->fields($record)->execute();
+  if ($record['urlid'] !== FALSE) {
     // Immediately cache the record for later use.
     $cached_urls = &drupal_static('simplenews_statistics_url');
-    $cached_urls[$url] = $record;
-    return $record;
+    $cached_urls[$url] = (object) $record;
+    return (object) $record;
   }
   return FALSE;
 }
@@ -339,9 +340,10 @@ function simplenews_statistics_count_opens($nid, $distinct = FALSE) {
  * Get subscriber count for the given newsletter node.
  */
 function simplenews_statistics_count_subscribers($nid) {
-  $newsletter = simplenews_newsletter_load($nid);
+  $node = Node::load($nid);
+  $newsletter = $node->simplenews_issue->entity;
 
-  return simplenews_count_subscriptions($newsletter->tid);
+  return simplenews_count_subscriptions($newsletter->id());
 }
 
 /**

@@ -20,24 +20,30 @@ class SimplenewsStatisticsTest extends SimplenewsTestBase {
 
   public static $modules = ['simplenews_statistics'];
 
+  /**
+   * A user with all simplenews, simplenews statistics and core permissions.
+   *
+   * @var \Drupal\user\UserInterface
+   */
+  protected $user;
+
+  /**
+   * {@inheritdoc}
+   */
   function setUp() {
     parent::setUp();
 
-    /**
-     * @var $user
-     *   Create a user with all simplenews, simplenews statistics and core permissions
-     */
     $this->user = $this->drupalCreateUser(array(
                     'administer newsletter statistics',
-                    'view newsletters statistics',
+                    'view newsletter statistics',
                     'administer newsletters',
                     'send newsletter',
                     'administer nodes',
                     'administer simplenews subscriptions',
-                    'create simplenews content',
-                    'edit any simplenews content',
+                    'create simplenews_issue content',
+                    'edit any simplenews_issue content',
                     'view own unpublished content',
-                    'delete any simplenews content',
+                    'delete any simplenews_issue content',
                   ));
     $this->drupalLogin($this->user);
 
@@ -61,7 +67,7 @@ class SimplenewsStatisticsTest extends SimplenewsTestBase {
 
     // Set the format to HTML.
     $this->drupalGet('admin/config/services/simplenews');
-    $this->clickLink(t('edit newsletter category'));
+    $this->clickLink(t('Edit'));
     $edit_category = array(
       'format' => 'html',
       // Use umlaut to provoke mime encoding.
@@ -71,7 +77,7 @@ class SimplenewsStatisticsTest extends SimplenewsTestBase {
       // Request a confirmation receipt.
       'receipt' => TRUE,
     );
-    $this->drupalPost(NULL, $edit_category, t('Save'));
+    $this->drupalPostForm(NULL, $edit_category, t('Save'));
 
     $body_text = <<<TEXT
 Mail token: <strong>[simplenews-subscriber:mail]</strong><br />
@@ -80,13 +86,13 @@ add a link in the mail to drupal.org so we can test later <br />
 TEXT;
 
     $edit = array(
-      'title' => $this->randomName(),
-      'body[und][0][value]' => $body_text,
+      'title[0][value]' => $this->randomMachineName(),
+      'body[0][value]' => $body_text,
     );
-    $this->drupalPost('node/add/simplenews', $edit, ('Save'));
+    $this->drupalPostForm('node/add/simplenews_issue', $edit, ('Save and publish'));
     $this->assertTrue(preg_match('|node/(\d+)$|', $this->getUrl(), $matches), 'Node created');
     $node = \Drupal::entityManager()->getStorage('node')->load($matches[1]);
-    $this->newsletter_nid = $node->nid;
+    $this->newsletter_nid = $node->id();
   }
 
   /**
@@ -94,10 +100,6 @@ TEXT;
    */
   private function createAndPublishNewsletter(){
     $this->createNewsletter();
-
-    $node = \Drupal::entityManager()->getStorage('node')->load($this->newsletter_nid);
-    $node->status = 1;
-    $node->save();
   }
 
   /**
@@ -109,10 +111,10 @@ TEXT;
     $node = \Drupal::entityManager()->getStorage('node')->load($this->newsletter_nid);
 
     // Send the node.
-    simplenews_add_node_to_spool($node);
+    \Drupal::service('simplenews.spool_storage')->addFromEntity($node);
 
     // Send mails.
-    simplenews_mail_spool();
+    \Drupal::service('simplenews.mailer')->sendSpool();
   }
 
   /**
@@ -127,8 +129,8 @@ TEXT;
     //get the last email sent
     $mails = $this->drupalGetMails();
     $mail = end($mails);
-    $source = $mail['params']['simplenews_source'];
-    $source_node = $source->getNode();
+    $source = $mail['params']['simplenews_mail'];
+    $source_node = $source->getEntity();
 
     //obtain the full URL link by stripping off the characters
     $link = $mail['body'];
@@ -143,10 +145,11 @@ TEXT;
     //Before "viewing", verify the tables are properly initialized
   {
     //the simplenews_statistics_open table should have no entry.
+    $subscriber = simplenews_subscriber_load_by_mail($mail['to']);
     $query = db_select('simplenews_statistics_open', 'ssc');
     $query->addExpression('COUNT(*)', 'ct');
-    $query->condition('nid', $source_node->nid);
-    $query->condition('email', $mail['to']);
+    $query->condition('nid', $source_node->id());
+    $query->condition('snid', $subscriber->id());
     if($resultset = $query->execute()){
       if($result = $resultset->fetchField()){
         $this->assertEqual(0, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_open')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result)));
@@ -156,7 +159,7 @@ TEXT;
     //Query that 0 views is recorded in simplenews_statistics; expected total opens = 0 and unique opens = 0
     $query = db_select('simplenews_statistics', 'ssc');
     $query->fields('ssc', array('total_opens', 'unique_opens'));
-    $query->condition('nid', $source_node->nid);
+    $query->condition('nid', $source_node->id());
     $found = FALSE;
     if($resultset = $query->execute()){
       if($result = $resultset->fetchObject()){
@@ -178,8 +181,8 @@ TEXT;
   //the simplenews_statistics_open table should have 1 entry.
   $query = db_select('simplenews_statistics_open', 'ssc');
   $query->addExpression('COUNT(*)', 'ct');
-  $query->condition('nid', $source_node->nid);
-  $query->condition('email', $mail['to']);
+  $query->condition('nid', $source_node->id());
+  $query->condition('snid', $subscriber->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchField()){
@@ -195,7 +198,7 @@ TEXT;
   //Query that 1 views is recorded in simplenews_statistics; expected total opens = 1 and unique opens = 1
   $query = db_select('simplenews_statistics', 'ssc');
   $query->fields('ssc', array('total_opens', 'unique_opens'));
-  $query->condition('nid', $source_node->nid);
+  $query->condition('nid', $source_node->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchObject()){
@@ -217,8 +220,8 @@ $this->drupalGet($link);
   //the simplenews_statistics_open table should have 2 entries.
   $query = db_select('simplenews_statistics_open', 'ssc');
   $query->addExpression('COUNT(*)', 'ct');
-  $query->condition('nid', $source_node->nid);
-  $query->condition('email', $mail['to']);
+  $query->condition('nid', $source_node->id());
+  $query->condition('snid', $subscriber->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchField()){
@@ -234,7 +237,7 @@ $this->drupalGet($link);
   //Query that 1 views is recorded in simplenews_statistics; expected total opens = 2 and unique opens = 1
   $query = db_select('simplenews_statistics', 'ssc');
   $query->fields('ssc', array('total_opens', 'unique_opens'));
-  $query->condition('nid', $source_node->nid);
+  $query->condition('nid', $source_node->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchObject()){
@@ -264,8 +267,8 @@ $this->drupalGet($link);
     //get the last email sent
     $mails = $this->drupalGetMails();
     $mail = end($mails);
-    $source = $mail['params']['simplenews_source'];
-    $source_node = $source->getNode();
+    $source = $mail['params']['simplenews_mail'];
+    $source_node = $source->getEntity();
 
     //obtain the full URL link by stripping off the characters
     $link = $mail['body'];
@@ -280,10 +283,11 @@ $this->drupalGet($link);
     //Before "clicking", verify the tables are properly initialized
   {
     //the simplenews_statistics_open table should have no entry.
+    $subscriber = simplenews_subscriber_load_by_mail($mail['to']);
     $query = db_select('simplenews_statistics_click', 'ssc');
     $query->addExpression('COUNT(*)', 'ct');
-    $query->condition('nid', $source_node->nid);
-    $query->condition('email', $mail['to']);
+    $query->condition('nid', $source_node->id());
+    $query->condition('snid', $subscriber->id());
     if($resultset = $query->execute()){
       if($result = $resultset->fetchField()){
         $this->assertEqual(0, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array('@statistic' => 'open', '@table' => 'simplenews_statistics_click')) . ' ' . t('Expected @expected, received @received', array('@expected' => 0, '@received' => $result)));
@@ -293,7 +297,7 @@ $this->drupalGet($link);
     //Query that 0 views is recorded in simplenews_statistics; expected total opens = 0 and unique opens = 0
     $query = db_select('simplenews_statistics', 'ssc');
     $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
-    $query->condition('nid', $source_node->nid);
+    $query->condition('nid', $source_node->id());
     $found = FALSE;
     if($resultset = $query->execute()){
       if($result = $resultset->fetchObject()){
@@ -315,8 +319,8 @@ $this->drupalGet($link);
   //the simplenews_statistics_click table should have 1 entry.
   $query = db_select('simplenews_statistics_click', 'ssc');
   $query->addExpression('COUNT(*)', 'ct');
-  $query->condition('nid', $source_node->nid);
-  $query->condition('email', $mail['to']);
+  $query->condition('nid', $source_node->id());
+  $query->condition('snid', $subscriber->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchField()){
@@ -332,7 +336,7 @@ $this->drupalGet($link);
   //Query that 1 views is recorded in simplenews_statistics; expected total opens = 1 and unique opens = 1
   $query = db_select('simplenews_statistics', 'ssc');
   $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
-  $query->condition('nid', $source_node->nid);
+  $query->condition('nid', $source_node->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchObject()){
@@ -354,8 +358,8 @@ $this->drupalGet($link);
   //the simplenews_statistics_click table should have 2 entries.
   $query = db_select('simplenews_statistics_click', 'ssc');
   $query->addExpression('COUNT(*)', 'ct');
-  $query->condition('nid', $source_node->nid);
-  $query->condition('email', $mail['to']);
+  $query->condition('nid', $source_node->id());
+  $query->condition('snid', $subscriber->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchField()){
@@ -371,7 +375,7 @@ $this->drupalGet($link);
   //Query that 1 views is recorded in simplenews_statistics; expected total opens = 2 and unique opens = 1
   $query = db_select('simplenews_statistics', 'ssc');
   $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
-  $query->condition('nid', $source_node->nid);
+  $query->condition('nid', $source_node->id());
   $found = FALSE;
   if($resultset = $query->execute()){
     if($result = $resultset->fetchObject()){
@@ -398,8 +402,8 @@ $this->drupalGet($link);
     //get the last email sent
     $mails = $this->drupalGetMails();
     $mail = end($mails);
-    $source = $mail['params']['simplenews_source'];
-    $source_node = $source->getNode();
+    $source = $mail['params']['simplenews_mail'];
+    $source_node = $source->getEntity();
 
     //obtain the full URL link by stripping off the characters
     $link = $mail['body'];
