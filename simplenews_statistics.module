@@ -14,25 +14,10 @@ use Drupal\node\NodeInterface;
  */
 
 /**
- * Access callback for statistics landing page.
- */
-function simplenews_statistics_node_tab_access($permission, \Drupal\node\NodeInterface $node, Drupal\Core\Session\AccountInterface $account) {
-  // Show warning about HTML.
-  if (isset($node->simplenews->tid)) {
-    $category = simplenews_category_load($node->simplenews->tid);
-    if ($category->format !== 'html') {
-      drupal_set_message(t('Newsletter category %name format has not been set to HTML. There will be no statistics recorded for this newsletter.', array('%name' => $category->name)), 'warning', FALSE);
-    }
-  }
-
-  return simplenews_check_node_types($node->getType()) && \Drupal::currentUser()->hasPermission($permission);
-}
-
-/**
  * Implements hook_node_insert().
  */
 function simplenews_statistics_node_insert(NodeInterface $node) {
-  if ($node->getType() == 'simplenews') {
+  if ($node->hasField('simplenews_issue')) {
     // Create corresponding record in {simplenews_statistics} table.
     $record = array(
       'nid' => $node->id(),
@@ -45,7 +30,7 @@ function simplenews_statistics_node_insert(NodeInterface $node) {
  * Implements hook_node_delete().
  */
 function simplenews_statistics_node_delete(NodeInterface $node) {
-  if ($node->getType() == 'simplenews') {
+  if ($node->hasField('simplenews_issue')) {
     // Delete all open and click records for this newsletter.
     simplenews_statistics_delete_opens($node->id());
     simplenews_statistics_delete_clicks($node->id());
@@ -104,7 +89,7 @@ function simplenews_statistics_mail_alter(&$message) {
 
     // During testing the snid might be unset. Use 0 in that case. This will
     // make sure that the link will still work but won't be counted.
-    $snid = isset($subscriber->snid) ? $subscriber->snid : 0;
+    $snid = $subscriber->id() ?: 0;
 
     // Optionally ignore $snid tracking for test sends.
     $track_test = \Drupal::config('simplenews_statistics.settings')->get('simplenews_statistics_track_test');
@@ -156,7 +141,7 @@ function _simplenews_statistics_parse_links(&$body, $nid, $snid) {
       '/<a([^>]*)href=[\"\']([^\"\']*)[\"\']([^>]*)>/mi',
       function($matches) use ($nid, $snid) {
         $value = _simplenews_statistics_replace_url($matches[2], $nid, $snid);
-        return '<a' . $matches[1] . 'href="' . $value . '"' . $matches[3] . '>';
+        return '<a' . $matches[1] . 'href="' . $value . 'F"' . $matches[3] . '>';
       },
       $body
     );
@@ -184,7 +169,7 @@ function _simplenews_statistics_image_tag(&$body, $nid, $snid) {
         $snid = $function($snid, 'snid');
       }
     }
-    $track_open = Url::fromRoute('simplenews_statistics.track_open', ['node' => $nid, 'simplenews_subscriber' => $snid], ['absolute' => TRUE])->toString();
+    $track_open = Url::fromRoute('simplenews_statistics.track_open', ['nid' => $nid, 'snid' => $snid], ['absolute' => TRUE])->toString();
     $body .= '<img src="' . $track_open . '" width="1" height="1" style="display: none;" />';
   }
 }
@@ -236,7 +221,7 @@ function _simplenews_statistics_replace_url($url, $nid, $snid) {
     }
   }
 
-  return Url::fromRoute('simplenews_statistics.track_click', ['urlid' => $urlid, 'simplenews_subscriber' => $snid], ['absolute' => TRUE])->toString();
+  return Url::fromRoute('simplenews_statistics.track_click', ['urlid' => $urlid, 'snid' => $snid], ['absolute' => TRUE])->toString();
 
 }
 

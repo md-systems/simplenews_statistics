@@ -10,6 +10,7 @@ namespace Drupal\simplenews_statistics\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\simplenews\Entity\Newsletter;
 
 class SimplenewsStatisticsAdminSettingsForm extends ConfigFormBase {
 
@@ -83,11 +84,11 @@ class SimplenewsStatisticsAdminSettingsForm extends ConfigFormBase {
     ];
 
     // Check for HTML formats.
-    $categories = simplenews_categories_load_multiple();
-    foreach ($categories as $category) {
-      if ($category->format !== 'html') {
-        drupal_set_message(t('Newsletter category %name format has not been set to HTML. There will be no statistics recorded for this newsletter.', [
-          '%name' => $category->name
+    $newsletters = Newsletter::loadMultiple();
+    foreach ($newsletters as $newsletter) {
+      if ($newsletter->format !== 'html') {
+        drupal_set_message(t('Newsletter %name format has not been set to HTML. There will be no statistics recorded for this newsletter.', [
+          '%name' => $newsletter->name
           ]), 'warning');
       }
     }

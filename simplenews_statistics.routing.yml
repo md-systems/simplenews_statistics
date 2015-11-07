@@ -12,20 +12,20 @@ simplenews_statistics.statistics:
     view_name: simplenews_statistics_overview
     display_id: page
     _title: Statistics
-    _controller: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_embed_view'
+    _controller: '\Drupal\simplenews_statistics\Controller\StatisticsController::simplenews_statistics_embed_view'
   requirements:
-    _custom_access: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_node_tab_access'
+    _custom_access: '\Drupal\simplenews_statistics\Controller\StatisticsController::simplenews_statistics_node_tab_access'
   options:
     _admin_route: true
 simplenews_statistics.track_open:
-  path: '/track/open/{node}/{simplenews_subscriber}'
+  path: '/track/open/{nid}/{snid}'
   defaults:
-    _controller: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_open_page'
+    _controller: '\Drupal\simplenews_statistics\Controller\StatisticsController::open'
   requirements:
     _permission: 'access content'
 simplenews_statistics.track_click:
-  path: '/track/click/{urlid}/{simplenews_subscriber}'
+  path: '/track/click/{urlid}/{snid}'
   defaults:
-    _controller: '\Drupal\simplenews_statistics\Controller\DefaultController::simplenews_statistics_click_page'
+    _controller: '\Drupal\simplenews_statistics\Controller\StatisticsController::click'
   requirements:
     _permission: 'access content'

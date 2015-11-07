@@ -58,12 +58,9 @@ class SimplenewsStatisticsTest extends SimplenewsTestBase {
    */
   private function createNewsletter() {
     // Use custom testing mail system to support HTML mails.
-    // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_set('mail_system', array('default-system' => 'SimplenewsHTMLTestingMailSystem'));
-
+    $mail_config = $this->config('system.mail');
+    $mail_config->set('interface.default', 'test_simplenews_html_mail');
+    $mail_config->save();
 
     // Set the format to HTML.
     $this->drupalGet('admin/config/services/simplenews');
@@ -135,13 +132,16 @@ TEXT;
     $source = $mail['params']['simplenews_mail'];
     $source_node = $source->getEntity();
 
-    //obtain the full URL link by stripping off the characters
-    $link = $mail['body'];
-    $link = substr($link, strpos($link, \Drupal\Component\Utility\SafeMarkup::checkPlain(url('simplenews/statistics/view', array('absolute' => TRUE,)))));
-
-    $link = substr($link, 0, strpos($link, '"'));
-
-    $this->verbose('Link thus far is: ' . $link);
+    // Obtain the full URL link.
+    $pattern = '@http://.+/track/open/\d+/\d+@';
+    $found = preg_match($pattern, $mail['body'], $match);
+    if (!$found) {
+      $this->fail('Track URL found.');
+      debug($mail['body']);
+      return;
+    }
+    $link = $match[0];
+    $this->pass(t('Track URL found: @url', array('@url' => $link)));
 
     //Before "viewing", verify the tables are properly initialized
     {
@@ -153,48 +153,24 @@ TEXT;
       $query->condition('snid', $subscriber->id());
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchField()) {
-          $this->assertEqual(0, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 0,
-              '@received' => $result
-            )));
+          $this->assertEqual(0, $result, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_open.');
         }
       }
+
+      simplenews_statistics_cron();
 
       //Query that 0 views is recorded in simplenews_statistics; expected total opens = 0 and unique opens = 0
       $query = db_select('simplenews_statistics', 'ssc');
       $query->fields('ssc', array('total_opens', 'unique_opens'));
       $query->condition('nid', $source_node->id());
-      $found = FALSE;
-      if ($resultset = $query->execute()) {
-        if ($result = $resultset->fetchObject()) {
-          $this->assertEqual(0, $result->total_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open',
-              '@field' => 'total_opens'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 0,
-              '@received' => $result->total_opens
-            )));
-          $this->assertEqual(0, $result->unique_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open',
-              '@field' => 'unique_opens'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 0,
-              '@received' => $result->unique_opens
-            )));
-          $found = TRUE;
-        }
+      $resultset = $query->execute();
+      if ($result = $resultset->fetchObject()) {
+        debug($result);
+        $this->assertEqual(0, $result->total_opens, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics in field: total_opens.');
+        $this->assertEqual(0, $result->unique_opens, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics in field: unique_opens.');
       }
-
-      if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics'
-        )));
+      else {
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics.');
       }
     }
 
@@ -207,26 +183,9 @@ TEXT;
       $query->addExpression('COUNT(*)', 'ct');
       $query->condition('nid', $source_node->id());
       $query->condition('snid', $subscriber->id());
-      $found = FALSE;
-      if ($resultset = $query->execute()) {
-        if ($result = $resultset->fetchField()) {
-          $this->assertEqual(1, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result
-            )));
-          $found = TRUE;
-        }
-      }
+      $result = $query->execute()->fetchField();
+      $this->assertEqual(1, $result, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_open.');
 
-      if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics_open'
-        )));
-      }
 
       //Query that 1 views is recorded in simplenews_statistics; expected total opens = 1 and unique opens = 1
       $query = db_select('simplenews_statistics', 'ssc');
@@ -235,35 +194,18 @@ TEXT;
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchObject()) {
-          $this->assertEqual(1, $result->total_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open',
-              '@field' => 'total_opens'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result->total_opens
-            )));
-          $this->assertEqual(1, $result->unique_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open',
-              '@field' => 'unique_opens'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result->unique_opens
-            )));
+          $this->assertEqual(1, $result->total_opens, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics in field: total_opens.');
+          $this->assertEqual(1, $result->unique_opens, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics in field: unique opens.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_open.');
       }
     }
 
-//load the image a second time
+    // load the image a second time.
     $this->drupalGet($link);
 
     {
@@ -275,22 +217,13 @@ TEXT;
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchField()) {
-          $this->assertEqual(2, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 2,
-              '@received' => $result
-            )));
+          $this->assertEqual(2, $result, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_open.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics_open'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_open.');
       }
 
       //Query that 1 views is recorded in simplenews_statistics; expected total opens = 2 and unique opens = 1
@@ -300,31 +233,14 @@ TEXT;
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchObject()) {
-          $this->assertEqual(2, $result->total_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open',
-              '@field' => 'total_opens'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 2,
-              '@received' => $result->total_opens
-            )));
-          $this->assertEqual(1, $result->unique_opens, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_open',
-              '@field' => 'unique_opens'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result->unique_opens
-            )));
+          $this->assertEqual(2, $result->total_opens, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics in field: total_opens.');
+          $this->assertEqual(1, $result->unique_opens, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics in field: unique_opens.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_open.');
       }
     }
   }
@@ -347,66 +263,47 @@ TEXT;
     $source = $mail['params']['simplenews_mail'];
     $source_node = $source->getEntity();
 
-    //obtain the full URL link by stripping off the characters
-    $link = $mail['body'];
-    $link = substr($link, strpos($link, \Drupal\Component\Utility\SafeMarkup::checkPlain(url('simplenews/statistics/click', array('absolute' => TRUE,)))));
-    //we only obtain the first of probobly several urls
-    $link = substr($link, 0, strpos($link, '"'));
-
-    $this->verbose('Link thus far is: ' . $link);
+    // Obtain the full URL link.
+    $pattern = '@http://.+/track/click/\d+/\d+@';
+    $found = preg_match($pattern, $mail['body'], $match);
+    if (!$found) {
+      $this->fail('Track URL found.');
+      debug($mail['body']);
+      return;
+    }
+    $link = $match[0];
+    $this->pass(t('Track URL found: @url', array('@url' => $link)));
 
     //Before "clicking", verify the tables are properly initialized
     {
       //the simplenews_statistics_open table should have no entry.
       $subscriber = simplenews_subscriber_load_by_mail($mail['to']);
       $query = db_select('simplenews_statistics_click', 'ssc');
+      $query->join('simplenews_statistics_url', 'ssu', 'ssu.urlid = ssc.urlid');
       $query->addExpression('COUNT(*)', 'ct');
       $query->condition('nid', $source_node->id());
       $query->condition('snid', $subscriber->id());
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchField()) {
-          $this->assertEqual(0, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 0,
-              '@received' => $result
-            )));
+          $this->assertEqual(0, $result, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
         }
       }
 
       //Query that 0 views is recorded in simplenews_statistics; expected total opens = 0 and unique opens = 0
       $query = db_select('simplenews_statistics', 'ssc');
-      $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
+      $query->fields('ssc', array('total_clicks', 'unique_clicks'));
       $query->condition('nid', $source_node->id());
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchObject()) {
-          $this->assertEqual(0, $result->total_clicks, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click',
-              '@field' => 'total_clicks'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 0,
-              '@received' => $result->total_clicks
-            )));
-          $this->assertEqual(0, $result->user_unique_click_through, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click',
-              '@field' => 'user_unique_click_through'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 0,
-              '@received' => $result->user_unique_click_through
-            )));
+          $this->assertEqual(0, $result->total_clicks, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click in field: total_clicks.');
+          $this->assertEqual(0, $result->unique_clicks, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click in field: unique_clicks.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
       }
     }
 
@@ -416,62 +313,37 @@ TEXT;
     {
       //the simplenews_statistics_click table should have 1 entry.
       $query = db_select('simplenews_statistics_click', 'ssc');
+      $query->join('simplenews_statistics_url', 'ssu', 'ssu.urlid = ssc.urlid');
       $query->addExpression('COUNT(*)', 'ct');
       $query->condition('nid', $source_node->id());
       $query->condition('snid', $subscriber->id());
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchField()) {
-          $this->assertEqual(1, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result
-            )));
+          $this->assertEqual(1, $result, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics_click'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
       }
 
       //Query that 1 views is recorded in simplenews_statistics; expected total opens = 1 and unique opens = 1
       $query = db_select('simplenews_statistics', 'ssc');
-      $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
+      $query->fields('ssc', array('total_clicks', 'unique_clicks'));
       $query->condition('nid', $source_node->id());
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchObject()) {
-          $this->assertEqual(1, $result->total_clicks, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click',
-              '@field' => 'total_clicks'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result->total_clicks
-            )));
-          $this->assertEqual(1, $result->user_unique_click_through, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click',
-              '@field' => 'user_unique_click_through'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result->user_unique_click_through
-            )));
+          $this->assertEqual(1, $result->total_clicks, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click in field: total_clicks.');
+          $this->assertEqual(1, $result->unique_clicks, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click in field: unique_clicks.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
       }
     }
 
@@ -481,62 +353,37 @@ TEXT;
     {
       //the simplenews_statistics_click table should have 2 entries.
       $query = db_select('simplenews_statistics_click', 'ssc');
+      $query->join('simplenews_statistics_url', 'ssu', 'ssu.urlid = ssc.urlid');
       $query->addExpression('COUNT(*)', 'ct');
       $query->condition('nid', $source_node->id());
       $query->condition('snid', $subscriber->id());
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchField()) {
-          $this->assertEqual(2, $result, t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 2,
-              '@received' => $result
-            )));
+          $this->assertEqual(2, $result, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics_click'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click.');
       }
 
       //Query that 1 views is recorded in simplenews_statistics; expected total opens = 2 and unique opens = 1
       $query = db_select('simplenews_statistics', 'ssc');
-      $query->fields('ssc', array('total_clicks', 'user_unique_click_through'));
+      $query->fields('ssc', array('total_clicks', 'unique_clicks'));
       $query->condition('nid', $source_node->id());
       $found = FALSE;
       if ($resultset = $query->execute()) {
         if ($result = $resultset->fetchObject()) {
-          $this->assertEqual(2, $result->total_clicks, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click',
-              '@field' => 'total_clicks'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 2,
-              '@received' => $result->total_clicks
-            )));
-          $this->assertEqual(1, $result->user_unique_click_through, t('Simplenews newsletter @statistic statistic was recorded properly in @table in field: @field.', array(
-              '@statistic' => 'open',
-              '@table' => 'simplenews_statistics_click',
-              '@field' => 'user_unique_click_through'
-            )) . ' ' . t('Expected @expected, received @received', array(
-              '@expected' => 1,
-              '@received' => $result->user_unique_click_through
-            )));
+          $this->assertEqual(2, $result->total_clicks, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click in field: total_clicks.');
+          $this->assertEqual(1, $result->unique_clicks, 'Simplenews newsletter open statistic was recorded properly in simplenews_statistics_click in field: unique_clicks.');
           $found = TRUE;
         }
       }
 
       if (!$found) {
-        $this->fail(t('Simplenews newsletter @statistic statistic was recorded properly in @table.', array(
-          '@statistic' => 'open',
-          '@table' => 'simplenews_statistics'
-        )));
+        $this->fail('Simplenews newsletter open statistic was recorded properly in simplenews_statistics.');
       }
     }
   }
@@ -556,16 +403,18 @@ TEXT;
     $source = $mail['params']['simplenews_mail'];
     $source_node = $source->getEntity();
 
-    //obtain the full URL link by stripping off the characters
-    $link = $mail['body'];
-    $link = substr($link, strpos($link, 'title="Simplenews Statistics Link" href="')); //make certain we get the link that we need to test
-    $link = substr($link, strpos($link, \Drupal\Component\Utility\SafeMarkup::checkPlain(url('simplenews/statistics/click', array('absolute' => TRUE,)))));
-    //we only obtain the first of probobly several urls
-    $link = substr($link, 0, strpos($link, '"'));
+    // Obtain the full URL link.
+    $pattern = '@http://.+/track/click/\d+/\d+@';
+    $found = preg_match($pattern, $mail['body'], $match);
+    if (!$found) {
+      $this->fail('Track URL found.');
+      debug($mail['body']);
+      return;
+    }
+    $link = $match[0];
+    $this->pass(t('Track URL found: @url', array('@url' => $link)));
 
-    $this->verbose('Link thus far is: ' . $link);
-
-    $intended_url = "http://drupal.org/project/simplenews_statistics"; //defined in the test mail we send above
+    $intended_url = "https://www.drupal.org/project/simplenews_statistics"; //defined in the test mail we send above
 
     //click the link - see if we are re-directed to the target page
     $this->drupalGet($link);

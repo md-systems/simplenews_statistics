@@ -64,6 +64,12 @@ function simplenews_statistics_schema() {
         'not null' => TRUE,
         'default' => -1,
       ),
+      'total_clicks' => array(
+        'description' => 'Total click count if newsletter is archived.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
+      ),
     ),
     'primary key' => array('nid'),
     'foreign keys' => array(

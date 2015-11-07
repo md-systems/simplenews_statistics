@@ -1,18 +1,25 @@
-<?php /**
+<?php
+
+/**
  * @file
- * Contains \Drupal\simplenews_statistics\Controller\DefaultController.
+ * Contains \Drupal\simplenews_statistics\Controller\StatisticsController.
  */
 
 namespace Drupal\simplenews_statistics\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Routing\TrustedRedirectResponse;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Url;
+use Drupal\node\NodeInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Default controller for the simplenews_statistics module.
  */
-class DefaultController extends ControllerBase {
+class StatisticsController extends ControllerBase {
 
-  public function simplenews_statistics_node_tab_access($permission, \Drupal\node\NodeInterface $node, Drupal\Core\Session\AccountInterface $account) {
+  public function simplenews_statistics_node_tab_access($permission, NodeInterface $node, AccountInterface $account) {
     // Show warning about HTML.
     if (isset($node->simplenews->tid)) {
       $category = simplenews_category_load($node->simplenews->tid);
@@ -31,7 +38,14 @@ class DefaultController extends ControllerBase {
     return render($view);
   }
 
-  public function simplenews_statistics_open_page($nid, $snid, $terminate = TRUE) {
+  /**
+   * @param $nid
+   * @param $snid
+   *
+   * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+   * @throws \Exception
+   */
+  public function open($nid, $snid, $terminate = TRUE) {
     // Call possible decoders for nid & snid in modules implementing the hook.
   // Modules implementing this hook should validate this input themself because
   // we can not know what kind of string they will generate.
@@ -53,32 +67,37 @@ class DefaultController extends ControllerBase {
     }
     else {
       $subscriber = simplenews_subscriber_load($snid);
-      if (!empty($subscriber) && $subscriber->snid == $snid) {
-        $record = new stdClass();
-        $record->snid = $subscriber->snid;
-        $record->nid = $nid;
-        $record->timestamp = time();
+      if ($subscriber) {
+        $record = [
+          'snid' => $subscriber->id(),
+          'nid' => $nid,
+          'timestamp' => REQUEST_TIME,
+        ];
         \Drupal::database()->insert('simplenews_statistics_open')->fields($record)->execute();
       }
     }
 
-    if ($terminate == FALSE) {
-      return; // Allow PHP execution to continue.
+    if (!$terminate) {
+      return;
     }
 
     // Render a transparent image and stop PHP execution.
     $type = 'image/png; utf-8';
     $file = drupal_get_path('module', 'simplenews_statistics') . '/images/count.png';
 
-    // Default headers are set by drupal_page_header(), just set content type.
-    drupal_add_http_header('Content-Type', $type);
-    drupal_add_http_header('Content-Length', filesize($file));
+    $response = new BinaryFileResponse($file);
+    $response->headers->set('Content-Type', $type);
 
-    readfile($file);
-    drupal_exit();
+    return $response;
   }
 
-  public function simplenews_statistics_click_page($urlid, $snid) {
+  /**
+   * @param $urlid
+   * @param $snid
+   *
+   * @throws \Exception
+   */
+  public function click($urlid, $snid) {
     // Call possible decoders for urlid & snid in modules implementing the hook.
     $hook = 'simplenews_statistics_decode';
     foreach (\Drupal::moduleHandler()->getImplementations($hook) as $module) {
@@ -97,7 +116,7 @@ class DefaultController extends ControllerBase {
         '@snid' => $snid,
       ]);
       drupal_set_message(t('Could not resolve destination URL.'), 'error');
-      drupal_goto();
+      return $this->redirect('<front>');
     }
 
     // Track click if there is an url and a valid subscriber. For test mails the
@@ -109,11 +128,12 @@ class DefaultController extends ControllerBase {
     $url_record = $query->execute()->fetchObject();
 
     $subscriber = simplenews_subscriber_load($snid);
-    if (!empty($subscriber) && $subscriber->snid == $snid && isset($url_record)) {
-      $click_record = new stdClass();
-      $click_record->urlid = $urlid;
-      $click_record->snid = $snid;
-      $click_record->timestamp = time();
+    if (!empty($subscriber) && isset($url_record)) {
+      $click_record = [
+        'urlid' => $urlid,
+        'snid' => $snid,
+        'timestamp' => REQUEST_TIME,
+      ];
       \Drupal::database()->insert('simplenews_statistics_click')->fields($click_record)->execute();
 
       // Check if the open action was registered for this subscriber. If not we
@@ -122,7 +142,7 @@ class DefaultController extends ControllerBase {
       $query->condition('snid', $snid);
       $num_rows = $query->countQuery()->execute()->fetchField();
       if ($num_rows == 0) {
-        simplenews_statistics_open_page($url_record->nid, $snid, FALSE);
+        $this->open($url_record->nid, $snid, FALSE);
       }
     }
 
@@ -169,7 +189,9 @@ class DefaultController extends ControllerBase {
         }
       }
       // Fragment behaviour can get out of spec here.
-      drupal_goto($path, $options);
+      $url = \Drupal::pathValidator()->getUrlIfValid($path);
+      $url->setOptions($options);
+      return new TrustedRedirectResponse($url->toString());
     }
 
     // Fallback on any error is to go to the homepage.
@@ -178,7 +200,7 @@ class DefaultController extends ControllerBase {
       '@snid' => $snid,
     ]);
     drupal_set_message(t('Could not resolve destination URL.'), 'error');
-    drupal_goto();
+    return $this->redirect('<front>');
   }
 
 }
