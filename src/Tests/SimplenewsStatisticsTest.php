@@ -2,31 +2,26 @@
 
 /**
  * @file
- * Simplenews Statistics test functions.
- *
- * @ingroup simplenews_statistics
- * @see SimplenewsTestCase
+ * Contains \Drupal\simplenews_statistics\Tests\SimplenewsStatisticsTest.
  */
 
-class SimplenewsStatisticsTestCase extends SimplenewsTestCase {
+namespace Drupal\simplenews_statistics\Tests;
+
+use Drupal\simplenews\Tests\SimplenewsTestBase;
+
+/**
+ * Tests newsletter statistic procedures for the simplenews module.
+ *
+ * @group simplenews_statistics
+ */
+class SimplenewsStatisticsTest extends SimplenewsTestBase {
 
   private $newsletter_nid = NULL;
 
-  /**
-   * Implementation of getInfo().
-   */
-  function getInfo() {
-    return array(
-      'name' => t('Simplenews Statistics'),
-      'description' => t('Tests newsletter statistic procedures for the simplenews module.'),
-      'group' => t('Simplenews'),
-    );
-  }
+  public static $modules = ['simplenews_statistics'];
 
-  function setUp($modules = array()) {
-    $modules = array_merge(array('simplenews_statistics'), $modules);
-
-    parent::setUp($modules);
+  function setUp() {
+    parent::setUp();
 
     /**
      * @var $user

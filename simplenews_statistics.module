@@ -5,62 +5,11 @@
  * Main simplenews statistics file.
  */
 
+use Drupal\node\NodeInterface;
+
 /**
  * @todo: Find a way to use simplenews' message caching (token replacement).
  */
-
-/**
- * Implements hook_menu().
- */
-function simplenews_statistics_menu() {
-  // Admin.
-  $items['admin/config/services/simplenews/statistics'] = array(
-    'title' => 'Statistics',
-    'type' => MENU_LOCAL_TASK,
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('simplenews_statistics_admin_settings_form'),
-    'access arguments' => array('administer newsletter statistics'),
-    'file' => 'includes/simplenews_statistics.admin.inc',
-  );
-  $items['admin/config/services/simplenews/statistics/settings'] = array(
-    'title' => 'Settings',
-    'weight' => -15,
-    'type' => MENU_DEFAULT_LOCAL_TASK, // Visible once submodules are enabled.
-  );
-  // Statistics.
-  $items['admin/content/simplenews/newsletters'] = array(
-    'title' => 'Newsletters',
-    'type' => MENU_DEFAULT_LOCAL_TASK, // Default tab for content overview.
-    'weight' => -1,
-  );
-  $items['node/%node/simplenews_statistics'] = array(
-    'title' => 'Statistics',
-    'type' => MENU_LOCAL_TASK,
-    'page callback' => 'simplenews_statistics_embed_view',
-    'page arguments' => array('simplenews_statistics_overview', 'page'),
-    'access arguments' => array('view newsletter statistics', 1),
-    'access callback' => 'simplenews_statistics_node_tab_access',
-    'file' => 'includes/simplenews_statistics.pages.inc',
-    'weight' => 1,
-  );
-  // Tracking.
-  $items['track/open/%/%'] = array(
-    'type' => MENU_CALLBACK,
-    'page callback' => 'simplenews_statistics_open_page',
-    'page arguments' => array(2, 3),
-    'access arguments' => array('access content'),
-    'file' => 'includes/simplenews_statistics.pages.inc',
-  );
-  $items['track/click/%/%'] = array(
-    'type' => MENU_CALLBACK,
-    'page callback' => 'simplenews_statistics_click_page',
-    'page arguments' => array(2, 3),
-    'access arguments' => array('access content'),
-    'file' => 'includes/simplenews_statistics.pages.inc',
-  );
-
-  return $items;
-}
 
 /**
  * Access callback for statistics landing page.
@@ -78,27 +27,9 @@ function simplenews_statistics_node_tab_access($permission, \Drupal\node\NodeInt
 }
 
 /**
- * Implements hook_permission().
- */
-function simplenews_statistics_permission() {
-  $permissions = array(
-    'administer newsletter statistics' => array(
-      'title' => t('Administer newsletter statistics'),
-      'description' => t('Allows user to administer newsletter statistics.'),
-    ),
-    'view newsletter statistics' => array(
-      'title' => t('View newsletter statistics'),
-      'description' => t('Allows user to access the statistics.'),
-    ),
-  );
-
-  return $permissions;
-}
-
-/**
  * Implements hook_node_insert().
  */
-function simplenews_statistics_node_insert(\Drupal\node\NodeInterface $node) {
+function simplenews_statistics_node_insert(NodeInterface $node) {
   if ($node->getType() == 'simplenews') {
     // Create corresponding record in {simplenews_statistics} table.
     $record = array(
@@ -111,7 +42,7 @@ function simplenews_statistics_node_insert(\Drupal\node\NodeInterface $node) {
 /**
  * Implements hook_node_delete().
  */
-function simplenews_statistics_node_delete(\Drupal\node\NodeInterface $node) {
+function simplenews_statistics_node_delete(NodeInterface $node) {
   if ($node->getType() == 'simplenews') {
     // Delete all open and click records for this newsletter.
     simplenews_statistics_delete_opens($node->id());
@@ -157,27 +88,6 @@ function simplenews_statistics_cron() {
 }
 
 /**
- * Implements hook_views_api().
- */
-function simplenews_statistics_views_api() {
-  return array(
-    'api' => '3.0',
-    'path' => drupal_get_path('module', 'simplenews_statistics') . '/includes/views',
-  );
-}
-
-/**
- * Implements hook_admin_paths().
- */
-function simplenews_statistics_admin_paths(){
-  $paths = array(
-    'node/*/simplenews_statistics*' => TRUE,
-  );
-
-  return $paths;
-}
-
-/**
  * Implements hook_mail_alter().
  *
  * Parses all the links in the email so they can be tracked. Also adds a hidden
@@ -185,8 +95,8 @@ function simplenews_statistics_admin_paths(){
  */
 function simplenews_statistics_mail_alter(&$message) {
   if ($message['id'] == 'simplenews_node' || $message['id'] == 'simplenews_test') {
-    $node = $message['params']['simplenews_source']->getNode();
-    $subscriber = $message['params']['simplenews_source']->getSubscriber();
+    $node = $message['params']['simplenews_mail']->getNode();
+    $subscriber = $message['params']['simplenews_mail']->getSubscriber();
 
     // During testing the snid might be unset. Use 0 in that case. This will
     // make sure that the link will still work but won't be counted.
@@ -429,7 +339,6 @@ function simplenews_statistics_count_opens($nid, $distinct = FALSE) {
  * Get subscriber count for the given newsletter node.
  */
 function simplenews_statistics_count_subscribers($nid) {
-  module_load_include('inc', 'simplenews', 'includes/simplenews.admin');
   $newsletter = simplenews_newsletter_load($nid);
 
   return simplenews_count_subscriptions($newsletter->tid);
